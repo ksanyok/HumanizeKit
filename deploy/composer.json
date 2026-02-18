@@ -1,0 +1,21 @@
+{
+    "name": "humanizekit/web",
+    "description": "HumanizeKit Web Service",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ksanyok/TextHumanize.git"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ksanyok/text-humanize": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "HumanizeKit\\": "api/"
+        }
+    }
+}

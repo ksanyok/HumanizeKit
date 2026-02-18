@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# API routes
+RewriteRule ^api/humanize$ api/humanize.php [L,QSA]
+RewriteRule ^api/analyze$ api/analyze.php [L,QSA]
+RewriteRule ^api/extract$ api/extract.php [L,QSA]
+RewriteRule ^api/info$ api/info.php [L,QSA]
+
+# Static files — serve directly
+RewriteCond %{REQUEST_URI} ^/static/ [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Everything else → index.html (SPA)
+RewriteRule ^ index.html [L]

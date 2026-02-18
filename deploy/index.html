@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HumanizeKit — AI Text Naturalization</title>
+    <meta name="description" content="Transform AI-generated text into natural, human-like writing. Algorithmic text naturalization with 9+ language support.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+</head>
+<body>
+    <!-- Particle Background -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Animated gradient orbs -->
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 40 40" fill="none">
+                            <defs>
+                                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="50%" stop-color="#8b5cf6"/>
+                                    <stop offset="100%" stop-color="#ec4899"/>
+                                </linearGradient>
+                            </defs>
+                            <rect rx="10" width="40" height="40" fill="url(#logoGrad)" opacity="0.15"/>
+                            <path d="M12 14h16M12 20h10M12 26h14" stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round"/>
+                            <circle cx="30" cy="28" r="5" fill="url(#logoGrad)" opacity="0.6"/>
+                            <path d="M28 28l2 2 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-name">HumanizeKit</span>
+                        <span class="logo-badge" id="versionBadge">v1.0</span>
+                    </div>
+                </div>
+                <nav class="nav">
+                    <a href="#tool" class="nav-link active" data-section="tool" data-i18n="nav.tool">Tool</a>
+                    <a href="#pipeline" class="nav-link" data-section="pipeline" data-i18n="nav.pipeline">Pipeline</a>
+                    <a href="#api-docs" class="nav-link" data-section="api-docs" data-i18n="nav.api">API</a>
+                </nav>
+                <div class="header-actions">
+                    <!-- Language Switcher -->
+                    <div class="lang-switcher" id="langSwitcher">
+                        <button class="lang-btn" data-lang="en" title="English">🇬🇧</button>
+                        <button class="lang-btn" data-lang="ru" title="Русский">🇷🇺</button>
+                        <button class="lang-btn" data-lang="uk" title="Українська">🇺🇦</button>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                        </svg>
+                    </button>
+                    <a href="https://github.com/ksanyok/TextHumanize" target="_blank" class="btn btn-ghost btn-sm">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge animate-fade-in">
+                    <span class="pulse-dot"></span>
+                    <span data-i18n="hero.badge">Powered by TextHumanize Engine</span>
+                </div>
+                <h1 class="hero-title animate-fade-in-up">
+                    <span data-i18n="hero.title.1">Transform </span><span class="gradient-text" data-i18n="hero.title.highlight">AI Text</span><span data-i18n="hero.title.2"> into</span><br>
+                    <span class="gradient-text" data-i18n="hero.title.3">Natural Human Writing</span>
+                </h1>
+                <p class="hero-subtitle animate-fade-in-up delay-1" data-i18n="hero.subtitle" data-i18n-html>
+                    Algorithmic text naturalization — normalize typography, simplify bureaucratic language,
+                    diversify sentence structure, boost burstiness &amp; perplexity. <strong>9 languages</strong>, zero external API calls.
+                </p>
+                <div class="hero-stats animate-fade-in-up delay-2">
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="10">0</span>
+                        <span class="stat-label" data-i18n="hero.stat.stages">Pipeline Stages</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="9">0</span>
+                        <span class="stat-label" data-i18n="hero.stat.languages">Languages</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="5">0</span>
+                        <span class="stat-label" data-i18n="hero.stat.profiles">Profiles</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">0ms</span>
+                        <span class="stat-label" data-i18n="hero.stat.delay">Network Delay</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Tool Section -->
+    <main id="tool" class="main-section">
+        <div class="container">
+            <!-- Controls Bar -->
+            <div class="controls-bar glass-card animate-fade-in-up delay-2">
+                <div class="control-group">
+                    <label class="control-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                        <span data-i18n="ctrl.language">Language</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="langSelect" class="select-input">
+                            <option value="auto">🔍 Auto-detect</option>
+                            <option value="ru">🇷🇺 Русский</option>
+                            <option value="uk">🇺🇦 Українська</option>
+                            <option value="en">🇬🇧 English</option>
+                            <option value="de">🇩🇪 Deutsch</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="pl">🇵🇱 Polski</option>
+                            <option value="pt">🇵🇹 Português</option>
+                            <option value="it">🇮🇹 Italiano</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                        <span data-i18n="ctrl.profile">Profile</span>
+                    </label>
+                    <div class="profile-pills" id="profilePills">
+                        <button class="pill" data-profile="chat" title="Messaging, social media">💬 Chat</button>
+                        <button class="pill active" data-profile="web" title="Blog posts, articles">🌐 Web</button>
+                        <button class="pill" data-profile="seo" title="SEO content">📈 SEO</button>
+                        <button class="pill" data-profile="docs" title="Documentation">📄 Docs</button>
+                        <button class="pill" data-profile="formal" title="Academic, legal">🎓 Formal</button>
+                    </div>
+                </div>
+
+                <div class="control-group control-group-slider">
+                    <label class="control-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        <span data-i18n="ctrl.intensity">Intensity</span>: <span id="intensityValue" class="intensity-badge">60</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="intensitySlider" class="slider" min="0" max="100" value="60">
+                        <div class="slider-labels">
+                            <span data-i18n="ctrl.slider.typo">Typography</span>
+                            <span data-i18n="ctrl.slider.light">Light</span>
+                            <span data-i18n="ctrl.slider.medium">Medium</span>
+                            <span data-i18n="ctrl.slider.strong">Strong</span>
+                            <span data-i18n="ctrl.slider.max">Maximum</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Area -->
+            <div class="editor-area animate-fade-in-up delay-3">
+                <div class="editor-panel glass-card">
+                    <div class="editor-header">
+                        <div class="editor-title">
+                            <div class="dot-indicator dot-red"></div>
+                            <span data-i18n="editor.original">Original Text</span>
+                        </div>
+                        <div class="editor-actions">
+                            <!-- Input Source Tabs -->
+                            <div class="source-tabs" id="sourceTabs">
+                                <button class="source-tab active" data-source="text" data-i18n="source.text">Text</button>
+                                <button class="source-tab" data-source="file" data-i18n="source.file">File</button>
+                                <button class="source-tab" data-source="url" data-i18n="source.url">URL</button>
+                            </div>
+                            <button class="btn-icon" id="pasteBtn" data-i18n-title="editor.paste" title="Paste from clipboard">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                            </button>
+                            <button class="btn-icon" id="clearBtn" data-i18n-title="editor.clear" title="Clear text">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Text Input (default) -->
+                    <div class="source-panel active" id="sourceText">
+                        <textarea id="inputText" class="editor-textarea" data-i18n-placeholder="editor.placeholder" placeholder="Paste your AI-generated text here...&#10;&#10;Example: Furthermore, it is important to note that the implementation of cloud computing facilitates the optimization of business processes."></textarea>
+                    </div>
+
+                    <!-- File Upload Panel -->
+                    <div class="source-panel" id="sourceFile">
+                        <div class="file-upload-zone" id="fileDropZone">
+                            <div class="file-upload-content">
+                                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                                <p class="file-drop-text" data-i18n="file.drop">Drop file here or click to choose</p>
+                                <p class="file-formats" data-i18n="file.formats">Supports: TXT, HTML, MD</p>
+                                <button class="btn btn-ghost btn-sm file-choose-btn" id="fileChooseBtn" data-i18n="file.choose">Choose File</button>
+                            </div>
+                            <input type="file" id="fileInput" class="file-hidden-input" accept=".txt,.text,.md,.markdown,.html,.htm,.csv,.log">
+                            <div class="file-name" id="fileName" style="display:none"></div>
+                        </div>
+                    </div>
+
+                    <!-- URL Input Panel -->
+                    <div class="source-panel" id="sourceUrl">
+                        <div class="url-input-zone">
+                            <div class="url-input-wrapper">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="url-icon">
+                                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                                </svg>
+                                <input type="url" id="urlInput" class="url-text-input" data-i18n-placeholder="url.placeholder" placeholder="Enter URL to extract text from...">
+                                <button class="btn-fetch" id="fetchUrlBtn" data-i18n="url.fetch">Fetch</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Stats Bar -->
+                    <div class="stats-bar" id="inputStats">
+                        <span class="stat-chip" id="statChars">0 chars</span>
+                        <span class="stat-chip" id="statWords">0 words</span>
+                        <span class="stat-chip" id="statSentences">0 sent.</span>
+                        <span class="stat-chip" id="statParas">0 para.</span>
+                        <span class="stat-chip" id="statReadTime">~0s read</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-center">
+                    <button id="humanizeBtn" class="btn-humanize" disabled>
+                        <span class="btn-content">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <span data-i18n="btn.humanize">Humanize</span>
+                        </span>
+                        <span class="btn-loading">
+                            <div class="spinner"></div>
+                            <span data-i18n="btn.processing">Processing...</span>
+                        </span>
+                    </button>
+                    <div class="action-secondary">
+                        <button id="analyzeOnlyBtn" class="btn btn-ghost btn-sm" disabled>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <span data-i18n="btn.analyze">Analyze Only</span>
+                        </button>
+                        <button id="detectAiBtn" class="btn btn-ghost btn-sm" disabled>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/></svg>
+                            <span data-i18n="btn.detect">AI Detector</span>
+                        </button>
+                    </div>
+                    <!-- Check Type Pills -->
+                    <div class="check-type-section">
+                        <label class="control-label control-label-sm" data-i18n="check.type">Check Type</label>
+                        <div class="check-type-pills" id="checkTypePills">
+                            <button class="check-pill active" data-check="comprehensive" data-i18n="check.comprehensive">Comprehensive</button>
+                            <button class="check-pill" data-check="ai" data-i18n="check.ai">AI Detection</button>
+                            <button class="check-pill" data-check="readability" data-i18n="check.readability">Readability</button>
+                            <button class="check-pill" data-check="style" data-i18n="check.style">Style Quality</button>
+                        </div>
+                    </div>
+                    <div class="shortcut-hint" data-i18n="btn.shortcut">⌘+Enter to process</div>
+                </div>
+
+                <div class="editor-panel glass-card" id="resultPanel">
+                    <div class="editor-header">
+                        <div class="editor-title">
+                            <div class="dot-indicator dot-green"></div>
+                            <span data-i18n="editor.result">Humanized Result</span>
+                        </div>
+                        <div class="editor-actions">
+                            <button class="btn-icon" id="copyBtn" data-i18n-title="editor.copy" title="Copy result" disabled>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                            </button>
+                            <button class="btn-icon" id="diffToggle" data-i18n-title="editor.diff" title="Toggle diff view" disabled>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                            </button>
+                            <span class="change-badge" id="changeBadge" style="display:none">0%</span>
+                        </div>
+                    </div>
+                    <div id="resultText" class="editor-textarea editor-output">
+                        <div class="placeholder-output">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <p data-i18n="editor.result.placeholder">Your humanized text will appear here</p>
+                        </div>
+                    </div>
+                    <!-- Result Stats Bar -->
+                    <div class="stats-bar" id="resultStats" style="display:none">
+                        <span class="stat-chip" id="statCharsResult">0 chars</span>
+                        <span class="stat-chip" id="statWordsResult">0 words</span>
+                        <span class="stat-chip" id="statSentencesResult">0 sent.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Detection Panel -->
+            <div id="aiDetectionPanel" class="ai-detection-panel glass-card" style="display:none">
+                <div class="ai-detection-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/></svg>
+                        <span data-i18n="ai.title">AI Detection Analysis</span>
+                    </h3>
+                </div>
+                <div class="ai-detection-body">
+                    <div class="ai-score-circle">
+                        <svg class="ai-ring" viewBox="0 0 120 120">
+                            <circle class="ai-ring-bg" cx="60" cy="60" r="52" />
+                            <circle class="ai-ring-fill" id="aiRingFill" cx="60" cy="60" r="52" />
+                        </svg>
+                        <div class="ai-score-text">
+                            <span class="ai-score-number" id="aiScoreNumber">--</span>
+                            <span class="ai-score-label" data-i18n="ai.score">AI Score</span>
+                        </div>
+                    </div>
+                    <div class="ai-verdict" id="aiVerdict">--</div>
+                    <div class="ai-factors" id="aiFactors"></div>
+                </div>
+            </div>
+
+            <!-- Readability Panel -->
+            <div id="readabilityPanel" class="readability-panel glass-card" style="display:none">
+                <div class="readability-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                        <span data-i18n="readability.title">Readability Analysis</span>
+                    </h3>
+                </div>
+                <div class="readability-body">
+                    <div class="readability-grid">
+                        <div class="readability-card">
+                            <div class="readability-value" id="readGrade">--</div>
+                            <div class="readability-label" data-i18n="readability.grade">Reading Level</div>
+                        </div>
+                        <div class="readability-card">
+                            <div class="readability-value" id="readAvgWord">--</div>
+                            <div class="readability-label" data-i18n="readability.avgword">Avg Word Length</div>
+                        </div>
+                        <div class="readability-card">
+                            <div class="readability-value" id="readAvgSent">--</div>
+                            <div class="readability-label" data-i18n="readability.avgsentence">Avg Sentence Length</div>
+                        </div>
+                        <div class="readability-card">
+                            <div class="readability-value" id="readUnique">--</div>
+                            <div class="readability-label" data-i18n="readability.unique">Vocabulary Richness</div>
+                        </div>
+                        <div class="readability-card">
+                            <div class="readability-value" id="readTime">--</div>
+                            <div class="readability-label" data-i18n="readability.readtime">Reading Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Style Quality Panel -->
+            <div id="stylePanel" class="style-panel glass-card" style="display:none">
+                <div class="style-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <span data-i18n="style.title">Style Quality</span>
+                    </h3>
+                </div>
+                <div class="style-body">
+                    <div class="style-bars" id="styleBars"></div>
+                </div>
+            </div>
+
+            <!-- Metrics Dashboard -->
+            <div id="metricsDashboard" class="metrics-dashboard" style="display:none">
+                <h3 class="section-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    <span data-i18n="metrics.title">Analysis Dashboard</span>
+                </h3>
+
+                <div class="metrics-grid">
+                    <div class="metric-card glass-card metric-primary">
+                        <div class="metric-header">
+                            <span class="metric-name" data-i18n="metrics.artificiality">Artificiality Score</span>
+                            <span class="metric-direction" id="artificialityDir"></span>
+                        </div>
+                        <div class="gauge-container">
+                            <svg class="gauge" viewBox="0 0 120 80">
+                                <defs>
+                                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#10b981"/>
+                                        <stop offset="50%" stop-color="#f59e0b"/>
+                                        <stop offset="100%" stop-color="#ef4444"/>
+                                    </linearGradient>
+                                </defs>
+                                <path class="gauge-bg" d="M10 70 A50 50 0 0 1 110 70"/>
+                                <path class="gauge-fill" id="artificialityGauge" d="M10 70 A50 50 0 0 1 110 70"/>
+                            </svg>
+                            <div class="gauge-value">
+                                <span id="artificialityBefore" class="gauge-before">--</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                <span id="artificialityAfter" class="gauge-after">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-card">
+                        <div class="metric-header"><span class="metric-name" data-i18n="metrics.sentlen">Avg Sentence Length</span></div>
+                        <div class="metric-values">
+                            <div class="metric-before"><span class="label" data-i18n="metrics.before">Before</span><span class="value" id="sentLenBefore">--</span></div>
+                            <div class="metric-after"><span class="label" data-i18n="metrics.after">After</span><span class="value" id="sentLenAfter">--</span></div>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar metric-bar-before" id="sentLenBarBefore"></div>
+                            <div class="metric-bar metric-bar-after" id="sentLenBarAfter"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-card">
+                        <div class="metric-header"><span class="metric-name" data-i18n="metrics.bureau">Bureaucratic Ratio</span></div>
+                        <div class="metric-values">
+                            <div class="metric-before"><span class="label" data-i18n="metrics.before">Before</span><span class="value" id="bureaRatioBefore">--</span></div>
+                            <div class="metric-after"><span class="label" data-i18n="metrics.after">After</span><span class="value" id="bureaRatioAfter">--</span></div>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar metric-bar-before" id="bureaBarBefore"></div>
+                            <div class="metric-bar metric-bar-after" id="bureaBarAfter"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-card">
+                        <div class="metric-header"><span class="metric-name" data-i18n="metrics.burst">Burstiness</span></div>
+                        <div class="metric-values">
+                            <div class="metric-before"><span class="label" data-i18n="metrics.before">Before</span><span class="value" id="burstBefore">--</span></div>
+                            <div class="metric-after"><span class="label" data-i18n="metrics.after">After</span><span class="value" id="burstAfter">--</span></div>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar metric-bar-before" id="burstBarBefore"></div>
+                            <div class="metric-bar metric-bar-after" id="burstBarAfter"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-card">
+                        <div class="metric-header"><span class="metric-name" data-i18n="metrics.connector">Connector Ratio</span></div>
+                        <div class="metric-values">
+                            <div class="metric-before"><span class="label" data-i18n="metrics.before">Before</span><span class="value" id="connRatioBefore">--</span></div>
+                            <div class="metric-after"><span class="label" data-i18n="metrics.after">After</span><span class="value" id="connRatioAfter">--</span></div>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar metric-bar-before" id="connBarBefore"></div>
+                            <div class="metric-bar metric-bar-after" id="connBarAfter"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-card">
+                        <div class="metric-header"><span class="metric-name" data-i18n="metrics.repetition">Repetition Score</span></div>
+                        <div class="metric-values">
+                            <div class="metric-before"><span class="label" data-i18n="metrics.before">Before</span><span class="value" id="repScoreBefore">--</span></div>
+                            <div class="metric-after"><span class="label" data-i18n="metrics.after">After</span><span class="value" id="repScoreAfter">--</span></div>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar metric-bar-before" id="repBarBefore"></div>
+                            <div class="metric-bar metric-bar-after" id="repBarAfter"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Changes Log -->
+                <div class="changes-section glass-card" id="changesSection" style="display:none">
+                    <div class="changes-header" id="changesToggle">
+                        <h4>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                            <span data-i18n="changes.title">Detailed Changes</span>
+                        </h4>
+                        <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="changes-body" id="changesBody">
+                        <div class="changes-list" id="changesList"></div>
+                    </div>
+                </div>
+
+                <!-- Processing Info -->
+                <div class="processing-info">
+                    <span id="processingTime"></span>
+                    <span id="detectedLang"></span>
+                    <span id="appliedProfile"></span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pipeline Section -->
+    <section id="pipeline" class="pipeline-section">
+        <div class="container">
+            <h2 class="section-title-large"><span class="gradient-text" data-i18n="pipeline.title">10-Stage Processing Pipeline</span></h2>
+            <p class="section-subtitle" data-i18n="pipeline.subtitle">Each text passes through a carefully orchestrated series of transformations</p>
+            <div class="pipeline-visual">
+                <div class="pipeline-step" data-step="1" style="--delay:0"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="pipe.1.title">Segmentation</h4><p data-i18n="pipe.1.desc">Protect code blocks, URLs, emails, brands</p></div><div class="step-icon">🔒</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="2" style="--delay:1"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="pipe.2.title">Typography</h4><p data-i18n="pipe.2.desc">Normalize dashes, quotes, ellipses, punctuation</p></div><div class="step-icon">✏️</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="3" style="--delay:2"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="pipe.3.title">Debureaucratization</h4><p data-i18n="pipe.3.desc">Replace bureaucratic/formal words</p></div><div class="step-icon">📝</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="4" style="--delay:3"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="pipe.4.title">Structure</h4><p data-i18n="pipe.4.desc">Diversify sentence openings and structure</p></div><div class="step-icon">🏗️</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="5" style="--delay:4"><div class="step-number">5</div><div class="step-content"><h4 data-i18n="pipe.5.title">Repetitions</h4><p data-i18n="pipe.5.desc">Reduce word/phrase repetitions with synonyms</p></div><div class="step-icon">🔄</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="6" style="--delay:5"><div class="step-number">6</div><div class="step-content"><h4 data-i18n="pipe.6.title">Liveliness</h4><p data-i18n="pipe.6.desc">Inject natural phrasing, colloquialisms</p></div><div class="step-icon">💬</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="7" style="--delay:6"><div class="step-number">7</div><div class="step-content"><h4 data-i18n="pipe.7.title">Universal</h4><p data-i18n="pipe.7.desc">Statistical processing for ALL languages</p></div><div class="step-icon">🌍</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step highlight" data-step="8" style="--delay:7"><div class="step-number">8</div><div class="step-content"><h4 data-i18n="pipe.8.title">Naturalization</h4><p data-i18n="pipe.8.desc">Style naturalization: burstiness & perplexity</p></div><div class="step-icon">⚡</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="9" style="--delay:8"><div class="step-number">9</div><div class="step-content"><h4 data-i18n="pipe.9.title">Validation</h4><p data-i18n="pipe.9.desc">Quality check, rollback if needed</p></div><div class="step-icon">✅</div></div>
+                <div class="pipeline-connector"><div class="connector-pulse"></div></div>
+                <div class="pipeline-step" data-step="10" style="--delay:9"><div class="step-number">10</div><div class="step-content"><h4 data-i18n="pipe.10.title">Restore</h4><p data-i18n="pipe.10.desc">Restore protected segments</p></div><div class="step-icon">🔓</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title-large"><span class="gradient-text" data-i18n="features.title">Key Features</span></h2>
+            <div class="features-grid">
+                <div class="feature-card glass-card"><div class="feature-icon">⚡</div><h3 data-i18n="feat.fast.title">Lightning Fast</h3><p data-i18n="feat.fast.desc">Pure algorithmic processing. Zero external API calls. Instant results.</p></div>
+                <div class="feature-card glass-card"><div class="feature-icon">🔒</div><h3 data-i18n="feat.private.title">100% Private</h3><p data-i18n="feat.private.desc">All processing happens on server. Your data never leaves the system.</p></div>
+                <div class="feature-card glass-card"><div class="feature-icon">🎛️</div><h3 data-i18n="feat.control.title">Fine-Tuned Control</h3><p data-i18n="feat.control.desc">5 profiles, intensity slider, keyword preservation, and preserve options.</p></div>
+                <div class="feature-card glass-card"><div class="feature-icon">🌍</div><h3 data-i18n="feat.lang.title">9+ Languages</h3><p data-i18n="feat.lang.desc">Full dictionary support for 9 languages plus universal processor for any other.</p></div>
+                <div class="feature-card glass-card"><div class="feature-icon">🤖</div><h3 data-i18n="feat.ai.title">AI Detector</h3><p data-i18n="feat.ai.desc">Built-in heuristic AI detection with detailed factor analysis and scoring.</p></div>
+                <div class="feature-card glass-card"><div class="feature-icon">📊</div><h3 data-i18n="feat.metrics.title">Readability Metrics</h3><p data-i18n="feat.metrics.desc">Burstiness, artificiality, bureaucratic ratio, connector analysis built-in.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Docs -->
+    <section id="api-docs" class="api-section">
+        <div class="container">
+            <h2 class="section-title-large"><span class="gradient-text" data-i18n="api.title">REST API</span></h2>
+            <p class="section-subtitle" data-i18n="api.subtitle">Integrate HumanizeKit into your workflow</p>
+            <div class="api-cards">
+                <div class="api-card glass-card">
+                    <div class="api-method post">POST</div>
+                    <code class="api-endpoint">/api/humanize</code>
+                    <p class="api-desc" data-i18n="api.humanize.desc">Transform text to sound more natural</p>
+                    <pre class="api-example"><code>{
+  "text": "Your AI-generated text here",
+  "lang": "auto",
+  "profile": "web",
+  "intensity": 60,
+  "keep_keywords": ["SEO", "API"]
+}</code></pre>
+                </div>
+                <div class="api-card glass-card">
+                    <div class="api-method post">POST</div>
+                    <code class="api-endpoint">/api/analyze</code>
+                    <p class="api-desc" data-i18n="api.analyze.desc">Analyze text metrics + AI detection</p>
+                    <pre class="api-example"><code>{
+  "text": "Text to analyze",
+  "lang": "auto"
+}
+// Returns: stats, ai_detection, metrics</code></pre>
+                </div>
+                <div class="api-card glass-card">
+                    <div class="api-method get">GET</div>
+                    <code class="api-endpoint">/api/info</code>
+                    <p class="api-desc" data-i18n="api.info.desc">Service metadata and supported options</p>
+                    <pre class="api-example"><code>// Response
+{
+  "service": "HumanizeKit",
+  "version": "1.0.0",
+  "engine": "TextHumanize PHP",
+  "profiles": ["chat","web","seo",...],
+  "languages": [...]
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-brand"><span class="logo-name">HumanizeKit</span><p data-i18n="footer.desc">Algorithmic text naturalization service</p></div>
+                <div class="footer-links">
+                    <a href="https://github.com/ksanyok/TextHumanize" target="_blank">GitHub</a>
+                    <a href="https://github.com/ksanyok/TextHumanize/issues" target="_blank">Issues</a>
+                    <a href="https://github.com/ksanyok/TextHumanize/discussions" target="_blank">Discussions</a>
+                </div>
+                <div class="footer-copy"><span data-i18n="footer.powered">Powered by</span> <a href="https://github.com/ksanyok/TextHumanize" target="_blank" data-i18n="footer.engine">TextHumanize</a> Engine</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="static/js/particles.js"></script>
+    <script src="static/js/i18n.js"></script>
+    <script src="static/js/app.js"></script>
+</body>
+</html>
