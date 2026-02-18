@@ -1,39 +1,32 @@
 /**
- * HumanizeKit — Main Application
- * Handles UI logic, API calls, metrics, AI detection, file/URL upload,
- * check types, i18n integration, and visual effects
+ * HumanizeKit — Main Application (Redesigned)
+ * Modal-based result display, no profile/intensity controls,
+ * AI factor translation, file/URL upload, check types
  */
 (function() {
     'use strict';
 
-    // === DOM Elements ===
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
 
+    // === DOM Elements ===
     const inputText = $('#inputText');
-    const resultText = $('#resultText');
     const humanizeBtn = $('#humanizeBtn');
     const analyzeOnlyBtn = $('#analyzeOnlyBtn');
     const detectAiBtn = $('#detectAiBtn');
-    const copyBtn = $('#copyBtn');
     const clearBtn = $('#clearBtn');
     const pasteBtn = $('#pasteBtn');
-    const diffToggle = $('#diffToggle');
     const themeToggle = $('#themeToggle');
     const langSelect = $('#langSelect');
-    const intensitySlider = $('#intensitySlider');
-    const intensityValue = $('#intensityValue');
-    const profilePills = $$('.pill[data-profile]');
-    const changeBadge = $('#changeBadge');
+
+    // Analysis panels
     const metricsDashboard = $('#metricsDashboard');
     const aiDetectionPanel = $('#aiDetectionPanel');
     const readabilityPanel = $('#readabilityPanel');
     const stylePanel = $('#stylePanel');
-    const resultPanel = $('#resultPanel');
     const changesSection = $('#changesSection');
     const changesToggle = $('#changesToggle');
     const changesList = $('#changesList');
-    const resultStats = $('#resultStats');
 
     // Stats elements
     const statChars = $('#statChars');
@@ -50,14 +43,34 @@
     const urlInput = $('#urlInput');
     const fetchUrlBtn = $('#fetchUrlBtn');
 
-    // Source tabs
+    // Source tabs & check type pills
     const sourceTabs = $$('.source-tab[data-source]');
-
-    // Check type pills
     const checkTypePills = $$('.check-pill[data-check]');
 
+    // Modal elements
+    const modalOverlay = $('#resultModal');
+    const modalResultText = $('#modalResultText');
+    const modalChangeBadge = $('#modalChangeBadge');
+    const modalCopyBtn = $('#modalCopyBtn');
+    const modalDiffBtn = $('#modalDiffBtn');
+    const modalCloseBtn = $('#modalCloseBtn');
+    const modalMetrics = $('#modalMetrics');
+    const modalChanges = $('#modalChanges');
+    const modalChangesList = $('#modalChangesList');
+    const modalProcessingTime = $('#modalProcessingTime');
+    const modalDetectedLang = $('#modalDetectedLang');
+
+    // AI factor name → i18n key mapping
+    const FACTOR_KEYS = {
+        'Artificiality': 'factor.artificiality',
+        'Bureaucratic Language': 'factor.bureaucratic',
+        'Connector Density': 'factor.connector',
+        'Sentence Uniformity': 'factor.uniformity',
+        'Vocabulary Diversity': 'factor.diversity',
+        'Repetition Level': 'factor.repetition',
+    };
+
     // State
-    let currentProfile = 'web';
     let currentCheckType = 'comprehensive';
     let currentSource = 'text';
     let showDiff = false;
@@ -70,21 +83,14 @@
         setupEventListeners();
         setupAnimatedCounters();
         fetchServiceInfo();
-
-        // Initialize i18n first so stats get translated labels
-        if (window.I18n) {
-            window.I18n.init();
-        }
-
+        if (window.I18n) window.I18n.init();
         updateInputStats();
     }
 
     // === Theme ===
     function setupTheme() {
         const saved = localStorage.getItem('humanizekit-theme');
-        if (saved) {
-            document.documentElement.setAttribute('data-theme', saved);
-        }
+        if (saved) document.documentElement.setAttribute('data-theme', saved);
     }
 
     function toggleTheme() {
@@ -102,46 +108,23 @@
 
     // === Event Listeners ===
     function setupEventListeners() {
-        // Text input
         inputText.addEventListener('input', onInputChange);
 
-        // Buttons
         humanizeBtn.addEventListener('click', doHumanize);
         analyzeOnlyBtn.addEventListener('click', doAnalyzeOnly);
         detectAiBtn.addEventListener('click', doDetectAi);
-        copyBtn.addEventListener('click', copyResult);
         clearBtn.addEventListener('click', clearAll);
         pasteBtn.addEventListener('click', pasteClipboard);
-        diffToggle.addEventListener('click', toggleDiffView);
         themeToggle.addEventListener('click', toggleTheme);
-
-        // Profile pills
-        profilePills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                profilePills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                currentProfile = pill.dataset.profile;
-                addRipple(pill);
-            });
-        });
-
-        // Intensity slider
-        intensitySlider.addEventListener('input', () => {
-            intensityValue.textContent = intensitySlider.value;
-        });
 
         // Changes toggle
         if (changesToggle) {
-            changesToggle.addEventListener('click', () => {
-                changesSection.classList.toggle('open');
-            });
+            changesToggle.addEventListener('click', () => changesSection.classList.toggle('open'));
         }
 
         // Source tabs
         sourceTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                switchSource(tab.dataset.source);
-            });
+            tab.addEventListener('click', () => switchSource(tab.dataset.source));
         });
 
         // Check type pills
@@ -155,65 +138,43 @@
 
         // File upload
         if (fileDropZone) {
-            fileDropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                fileDropZone.classList.add('drag-over');
-            });
-            fileDropZone.addEventListener('dragleave', () => {
-                fileDropZone.classList.remove('drag-over');
-            });
+            fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('drag-over'); });
+            fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('drag-over'));
             fileDropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileDropZone.classList.remove('drag-over');
-                const files = e.dataTransfer.files;
-                if (files.length > 0) handleFileUpload(files[0]);
+                e.preventDefault(); fileDropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
             });
         }
-
-        if (fileInput) {
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length > 0) {
-                    handleFileUpload(fileInput.files[0]);
-                }
-            });
-        }
-
-        if (fileChooseBtn) {
-            fileChooseBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                fileInput.click();
-            });
-        }
+        if (fileInput) fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) handleFileUpload(fileInput.files[0]); });
+        if (fileChooseBtn) fileChooseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
 
         // URL fetch
-        if (fetchUrlBtn) {
-            fetchUrlBtn.addEventListener('click', handleUrlFetch);
-        }
-        if (urlInput) {
-            urlInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') handleUrlFetch();
-            });
-        }
+        if (fetchUrlBtn) fetchUrlBtn.addEventListener('click', handleUrlFetch);
+        if (urlInput) urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleUrlFetch(); });
 
         // Language switcher
         $$('.lang-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.I18n) {
                     window.I18n.setLang(btn.dataset.lang);
-                    // Re-translate dynamic content
                     updateInputStats();
                 }
             });
         });
 
+        // Modal events
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (modalCopyBtn) modalCopyBtn.addEventListener('click', copyModalResult);
+        if (modalDiffBtn) modalDiffBtn.addEventListener('click', toggleModalDiff);
+        if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                 e.preventDefault();
-                if (!isProcessing && getInputText().trim()) {
-                    doHumanize();
-                }
+                if (!isProcessing && getInputText().trim()) doHumanize();
             }
+            if (e.key === 'Escape') closeModal();
         });
 
         // Nav active state
@@ -228,10 +189,7 @@
     // === Source Switching ===
     function switchSource(source) {
         currentSource = source;
-        sourceTabs.forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.source === source);
-        });
-        // Toggle panels
+        sourceTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.source === source));
         const panels = { text: '#sourceText', file: '#sourceFile', url: '#sourceUrl' };
         Object.entries(panels).forEach(([key, sel]) => {
             const panel = $(sel);
@@ -239,37 +197,20 @@
         });
     }
 
-    // === Get text from current source ===
-    function getInputText() {
-        return inputText.value.trim();
-    }
+    function getInputText() { return inputText.value.trim(); }
 
     // === File Upload ===
     async function handleFileUpload(file) {
-        const maxSize = 1024 * 1024; // 1MB
-        if (file.size > maxSize) {
-            showToast('error', t('toast.file.toobig'));
-            return;
-        }
-
+        if (file.size > 1024 * 1024) { showToast('error', t('toast.file.toobig')); return; }
         const ext = file.name.split('.').pop().toLowerCase();
         const allowed = ['txt', 'text', 'md', 'markdown', 'html', 'htm', 'csv', 'log'];
-        if (!allowed.includes(ext)) {
-            showToast('error', t('toast.file.type'));
-            return;
-        }
+        if (!allowed.includes(ext)) { showToast('error', t('toast.file.type')); return; }
 
-        // Try server-side extraction first for HTML
         if (['html', 'htm'].includes(ext)) {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-
-                const response = await fetch('/api/extract', {
-                    method: 'POST',
-                    body: formData,
-                });
-
+                const response = await fetch('/api/extract', { method: 'POST', body: formData });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.ok && data.text) {
@@ -280,10 +221,9 @@
                         return;
                     }
                 }
-            } catch(e) { /* fallback to client-side */ }
+            } catch(e) { /* fallback */ }
         }
 
-        // Client-side fallback: read as text
         try {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -292,33 +232,18 @@
                 onInputChange();
                 showToast('success', t('toast.file.loaded', file.name));
             };
-            reader.onerror = () => {
-                showToast('error', t('toast.file.error'));
-            };
+            reader.onerror = () => showToast('error', t('toast.file.error'));
             reader.readAsText(file);
-        } catch(e) {
-            showToast('error', t('toast.file.error'));
-        }
+        } catch(e) { showToast('error', t('toast.file.error')); }
 
-        // Show file name badge
-        if (fileName) {
-            fileName.textContent = file.name;
-            fileName.style.display = 'block';
-        }
+        if (fileName) { fileName.textContent = file.name; fileName.style.display = 'block'; }
     }
 
     // === URL Fetch ===
     async function handleUrlFetch() {
         const url = urlInput ? urlInput.value.trim() : '';
         if (!url) return;
-
-        // Basic URL validation
-        try {
-            new URL(url);
-        } catch {
-            showToast('error', t('toast.url.error'));
-            return;
-        }
+        try { new URL(url); } catch { showToast('error', t('toast.url.error')); return; }
 
         if (fetchUrlBtn) fetchUrlBtn.disabled = true;
         try {
@@ -327,12 +252,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url }),
             });
-
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-
             if (data.error) throw new Error(data.error);
-
             if (data.text) {
                 inputText.value = data.text;
                 switchSource('text');
@@ -346,7 +268,7 @@
         }
     }
 
-    // === Input Stats (live) ===
+    // === Input Stats ===
     function onInputChange() {
         updateInputStats();
         const hasText = inputText.value.trim().length > 0;
@@ -363,23 +285,135 @@
         const paragraphs = text.trim() ? text.split(/\n\s*\n/).filter(p => p.trim()).length : 0;
         const readTimeSec = Math.ceil(words / 3.5);
 
-        const cU = t('stats.chars');
-        const wU = t('stats.words');
-        const sU = t('stats.sent');
-        const pU = t('stats.para');
-        const rU = t('stats.read');
-
+        const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent'), pU = t('stats.para'), rU = t('stats.read');
         statChars.textContent = `${chars} ${cU}`;
         statWords.textContent = `${words} ${wU}`;
         statSentences.textContent = `${sentences} ${sU}`;
         statParas.textContent = `${paragraphs || (text.trim() ? 1 : 0)} ${pU}`;
-        statReadTime.textContent = readTimeSec > 60
-            ? `~${Math.round(readTimeSec/60)}m ${rU}`
-            : `~${readTimeSec}s ${rU}`;
+        statReadTime.textContent = readTimeSec > 60 ? `~${Math.round(readTimeSec/60)}m ${rU}` : `~${readTimeSec}s ${rU}`;
+        [statChars, statWords, statSentences, statParas].forEach(el => el.classList.toggle('active', chars > 0));
+    }
 
-        [statChars, statWords, statSentences, statParas].forEach(el => {
-            el.classList.toggle('active', chars > 0);
-        });
+    // === Modal ===
+    function openModal() {
+        if (modalOverlay) {
+            modalOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeModal() {
+        if (modalOverlay) {
+            modalOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function copyModalResult() {
+        const text = lastResult ? lastResult.text : '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => showToast('success', t('toast.copied'))).catch(() => showToast('error', t('toast.copy.fail')));
+    }
+
+    function toggleModalDiff() {
+        showDiff = !showDiff;
+        if (modalDiffBtn) modalDiffBtn.classList.toggle('active', showDiff);
+        if (lastResult) {
+            if (showDiff) {
+                renderDiffInModal(inputText.value, lastResult.text);
+            } else {
+                modalResultText.textContent = lastResult.text;
+            }
+        }
+    }
+
+    function populateModal(data) {
+        // Result text
+        modalResultText.textContent = data.text;
+        showDiff = false;
+        if (modalDiffBtn) modalDiffBtn.classList.remove('active');
+
+        // Change badge
+        if (data.change_ratio !== undefined) {
+            const pct = Math.round(data.change_ratio * 100);
+            modalChangeBadge.textContent = pct + '%';
+        }
+
+        // Result stats
+        const text = data.text;
+        const chars = text.length;
+        const words = text.trim().split(/\s+/).length;
+        const sentences = (text.match(/[.!?…]+/g) || []).length || 1;
+        const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent');
+        $('#statCharsResult').textContent = `${chars} ${cU}`;
+        $('#statWordsResult').textContent = `${words} ${wU}`;
+        $('#statSentencesResult').textContent = `${sentences} ${sU}`;
+
+        // Metrics in modal
+        populateModalMetrics(data);
+
+        // Changes in modal
+        if (data.changes && data.changes.length > 0) {
+            modalChanges.style.display = 'block';
+            modalChangesList.innerHTML = '';
+            data.changes.forEach(ch => {
+                const item = document.createElement('div');
+                item.className = 'modal-change-item';
+                item.innerHTML = `<span class="modal-change-stage">${escapeHtml(ch.stage || '')}</span><del>${escapeHtml(ch.old || ch.before || '')}</del> → <ins>${escapeHtml(ch.new || ch.after || '')}</ins>`;
+                modalChangesList.appendChild(item);
+            });
+        } else {
+            modalChanges.style.display = 'none';
+        }
+
+        // Processing info
+        if (data.elapsed_ms && modalProcessingTime) modalProcessingTime.textContent = `⏱ ${data.elapsed_ms}ms`;
+        if (data.detected_lang && modalDetectedLang) modalDetectedLang.textContent = `🌍 ${data.detected_lang}`;
+    }
+
+    function populateModalMetrics(data) {
+        if (!modalMetrics) return;
+        const before = data.metrics_before;
+        const after = data.metrics_after;
+        if (!before || !after) { modalMetrics.innerHTML = ''; return; }
+
+        const items = [
+            { label: t('metrics.artificiality'), before: before.artificiality_score, after: after.artificiality_score, lower: true },
+            { label: t('metrics.sentlen'), before: before.avg_sentence_length, after: after.avg_sentence_length, lower: false },
+            { label: t('metrics.bureau'), before: before.bureaucratic_ratio, after: after.bureaucratic_ratio, lower: true },
+            { label: t('metrics.burst'), before: before.burstiness_score, after: after.burstiness_score, lower: false },
+            { label: t('metrics.connector'), before: before.connector_ratio, after: after.connector_ratio, lower: true },
+            { label: t('metrics.repetition'), before: before.repetition_score, after: after.repetition_score, lower: true },
+        ];
+
+        modalMetrics.innerHTML = items.map(m => {
+            const bv = typeof m.before === 'number' ? (m.before % 1 ? m.before.toFixed(2) : m.before) : '--';
+            const av = typeof m.after === 'number' ? (m.after % 1 ? m.after.toFixed(2) : m.after) : '--';
+            const improved = m.lower ? m.after < m.before : m.after > m.before;
+            const arrow = improved ? '📉' : '📈';
+            return `<div class="modal-metric-card"><div class="modal-metric-label">${escapeHtml(m.label)}</div><div class="modal-metric-values"><span class="modal-metric-before">${bv}</span><span class="modal-metric-arrow">${arrow}</span><span class="modal-metric-after">${av}</span></div></div>`;
+        }).join('');
+    }
+
+    function renderDiffInModal(original, modified) {
+        const origWords = original.split(/(\s+)/);
+        const modWords = modified.split(/(\s+)/);
+        let html = '';
+        let i = 0, j = 0;
+        while (i < origWords.length || j < modWords.length) {
+            if (i < origWords.length && j < modWords.length && origWords[i] === modWords[j]) {
+                html += escapeHtml(origWords[i]); i++; j++;
+            } else if (j < modWords.length && (i >= origWords.length || origWords.indexOf(modWords[j], i) === -1 || j - i > 3)) {
+                if (modWords[j].trim()) html += `<span class="diff-ins">${escapeHtml(modWords[j])}</span>`;
+                else html += escapeHtml(modWords[j]);
+                j++;
+            } else if (i < origWords.length) {
+                if (origWords[i].trim()) html += `<span class="diff-del">${escapeHtml(origWords[i])}</span>`;
+                else html += escapeHtml(origWords[i]);
+                i++;
+            }
+        }
+        modalResultText.innerHTML = html;
     }
 
     // === API Calls ===
@@ -388,7 +422,6 @@
         if (!text || isProcessing) return;
 
         setProcessing(true);
-
         try {
             const response = await fetch('/api/humanize', {
                 method: 'POST',
@@ -396,28 +429,28 @@
                 body: JSON.stringify({
                     text: text,
                     lang: langSelect.value,
-                    profile: currentProfile,
-                    intensity: parseInt(intensitySlider.value),
+                    profile: 'web',
+                    intensity: 60,
                 }),
             });
-
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-
             if (data.error) throw new Error(data.error);
 
             lastResult = data;
-            displayResult(data);
-            displayMetrics(data);
-            showResultStats(data.text);
 
-            // Run appropriate check type analysis
+            // Populate and open modal
+            populateModal(data);
+            openModal();
+
+            // Also update dashboard behind modal
+            displayMetrics(data);
+
+            // Run analysis for check type
             doAnalyzeWithCheckType(data.text);
 
-            // Effects
             launchConfetti();
             showToast('success', t('toast.humanized', data.changes?.length || 0));
-
         } catch (err) {
             showToast('error', t('toast.error', err.message));
             console.error(err);
@@ -435,15 +468,11 @@
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, lang: langSelect.value }),
+                body: JSON.stringify({ text, lang: langSelect.value }),
             });
-
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-
             if (data.error) throw new Error(data.error);
-
-            // Display based on check type
             displayByCheckType(data);
             showToast('info', t('toast.analysis'));
         } catch (err) {
@@ -462,14 +491,11 @@
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, lang: langSelect.value }),
+                body: JSON.stringify({ text, lang: langSelect.value }),
             });
-
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-
             if (data.error) throw new Error(data.error);
-
             displayAiDetection(data.ai_detection);
             showToast('info', t('toast.ai.score', data.ai_detection.score));
         } catch (err) {
@@ -484,7 +510,7 @@
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, lang: langSelect.value }),
+                body: JSON.stringify({ text, lang: langSelect.value }),
             });
             if (!response.ok) return;
             const data = await response.json();
@@ -492,9 +518,8 @@
         } catch (e) { /* silent */ }
     }
 
-    // === Check Type Display Logic ===
+    // === Check Type Display ===
     function displayByCheckType(data) {
-        // Hide all analysis panels first
         aiDetectionPanel.style.display = 'none';
         if (readabilityPanel) readabilityPanel.style.display = 'none';
         if (stylePanel) stylePanel.style.display = 'none';
@@ -524,16 +549,9 @@
     function displayReadability(data) {
         if (!readabilityPanel || !data.stats) return;
         readabilityPanel.style.display = 'block';
-
         const s = data.stats;
-
-        // Reading level estimation based on avg sentence length
         const avgSL = data.avg_sentence_length || 0;
-        let grade;
-        if (avgSL < 10) grade = 'Easy';
-        else if (avgSL < 15) grade = 'Medium';
-        else if (avgSL < 20) grade = 'Advanced';
-        else grade = 'Complex';
+        let grade = avgSL < 10 ? 'Easy' : avgSL < 15 ? 'Medium' : avgSL < 20 ? 'Advanced' : 'Complex';
 
         const readGrade = $('#readGrade');
         const readAvgWord = $('#readAvgWord');
@@ -555,55 +573,26 @@
     function displayStyleQuality(data) {
         if (!stylePanel) return;
         stylePanel.style.display = 'block';
-
         const styleBars = $('#styleBars');
         if (!styleBars) return;
         styleBars.innerHTML = '';
 
         const metrics = [
-            {
-                label: t('style.diversity'),
-                value: data.stats ? data.stats.unique_ratio || 0 : 0,
-                max: 1,
-            },
-            {
-                label: t('style.burstiness'),
-                value: data.burstiness_score || 0,
-                max: 2,
-            },
-            {
-                label: t('style.formality'),
-                value: data.bureaucratic_ratio || 0,
-                max: 0.5,
-                inverse: true,
-            },
-            {
-                label: t('style.connectors'),
-                value: data.connector_ratio || 0,
-                max: 0.5,
-            },
+            { label: t('style.diversity'), value: data.stats ? data.stats.unique_ratio || 0 : 0, max: 1 },
+            { label: t('style.burstiness'), value: data.burstiness_score || 0, max: 2 },
+            { label: t('style.formality'), value: data.bureaucratic_ratio || 0, max: 0.5, inverse: true },
+            { label: t('style.connectors'), value: data.connector_ratio || 0, max: 0.5 },
         ];
 
         metrics.forEach(m => {
             const pct = Math.min((m.value / m.max) * 100, 100);
             const displayPct = m.inverse ? (100 - pct) : pct;
             const qualityClass = displayPct >= 70 ? 'excellent' : displayPct >= 50 ? 'good' : displayPct >= 30 ? 'average' : 'poor';
-
             const row = document.createElement('div');
             row.className = 'style-bar-row';
-            row.innerHTML = `
-                <span class="style-bar-label">${escapeHtml(m.label)}</span>
-                <div class="style-bar-track">
-                    <div class="style-bar-fill ${qualityClass}" style="width: 0%"></div>
-                </div>
-                <span class="style-bar-value">${displayPct.toFixed(0)}%</span>
-            `;
+            row.innerHTML = `<span class="style-bar-label">${escapeHtml(m.label)}</span><div class="style-bar-track"><div class="style-bar-fill ${qualityClass}" style="width: 0%"></div></div><span class="style-bar-value">${displayPct.toFixed(0)}%</span>`;
             styleBars.appendChild(row);
-
-            // Animate
-            setTimeout(() => {
-                row.querySelector('.style-bar-fill').style.width = `${displayPct}%`;
-            }, 150);
+            setTimeout(() => { row.querySelector('.style-bar-fill').style.width = `${displayPct}%`; }, 150);
         });
     }
 
@@ -613,42 +602,8 @@
             if (!response.ok) return;
             const data = await response.json();
             const badge = $('#versionBadge');
-            if (badge && data.version) {
-                badge.textContent = 'v' + data.version;
-            }
+            if (badge && data.version) badge.textContent = 'v' + data.version;
         } catch (e) { /* silent */ }
-    }
-
-    // === Display Result ===
-    function displayResult(data) {
-        copyBtn.disabled = false;
-        diffToggle.disabled = false;
-
-        if (showDiff) {
-            renderDiff(inputText.value, data.text);
-        } else {
-            resultText.textContent = data.text;
-        }
-
-        if (data.change_ratio !== undefined) {
-            const pct = Math.round(data.change_ratio * 100);
-            changeBadge.textContent = pct + '%';
-            changeBadge.style.display = 'inline-block';
-        }
-    }
-
-    function showResultStats(text) {
-        if (!text) return;
-        const chars = text.length;
-        const words = text.trim().split(/\s+/).length;
-        const sentences = (text.match(/[.!?…]+/g) || []).length || 1;
-        const cU = t('stats.chars');
-        const wU = t('stats.words');
-        const sU = t('stats.sent');
-        $('#statCharsResult').textContent = `${chars} ${cU}`;
-        $('#statWordsResult').textContent = `${words} ${wU}`;
-        $('#statSentencesResult').textContent = `${sentences} ${sU}`;
-        resultStats.style.display = 'flex';
     }
 
     // === Display Analysis ===
@@ -656,15 +611,13 @@
         metricsDashboard.style.display = 'block';
 
         if (data.artificiality_score !== undefined) {
-            const m = data;
-            updateMetricPair('artificialityBefore', 'artificialityAfter', m.artificiality_score, m.artificiality_score, 100);
-            updateMetricPair('sentLenBefore', 'sentLenAfter', m.avg_sentence_length, m.avg_sentence_length, 40, 'sentLenBarBefore', 'sentLenBarAfter');
-            updateMetricPair('bureaRatioBefore', 'bureaRatioAfter', m.bureaucratic_ratio, m.bureaucratic_ratio, 1, 'bureaBarBefore', 'bureaBarAfter');
-            updateMetricPair('burstBefore', 'burstAfter', m.burstiness_score, m.burstiness_score, 2, 'burstBarBefore', 'burstBarAfter');
-            updateMetricPair('connRatioBefore', 'connRatioAfter', m.connector_ratio, m.connector_ratio, 0.3, 'connBarBefore', 'connBarAfter');
-            updateMetricPair('repScoreBefore', 'repScoreAfter', m.repetition_score, m.repetition_score, 1, 'repBarBefore', 'repBarAfter');
-
-            animateGauge('artificialityGauge', m.artificiality_score / 100);
+            updateMetricPair('artificialityBefore', 'artificialityAfter', data.artificiality_score, data.artificiality_score, 100);
+            updateMetricPair('sentLenBefore', 'sentLenAfter', data.avg_sentence_length, data.avg_sentence_length, 40, 'sentLenBarBefore', 'sentLenBarAfter');
+            updateMetricPair('bureaRatioBefore', 'bureaRatioAfter', data.bureaucratic_ratio, data.bureaucratic_ratio, 1, 'bureaBarBefore', 'bureaBarAfter');
+            updateMetricPair('burstBefore', 'burstAfter', data.burstiness_score, data.burstiness_score, 2, 'burstBarBefore', 'burstBarAfter');
+            updateMetricPair('connRatioBefore', 'connRatioAfter', data.connector_ratio, data.connector_ratio, 0.3, 'connBarBefore', 'connBarAfter');
+            updateMetricPair('repScoreBefore', 'repScoreAfter', data.repetition_score, data.repetition_score, 1, 'repBarBefore', 'repBarAfter');
+            animateGauge('artificialityGauge', data.artificiality_score / 100);
         }
 
         if (data.ai_detection && currentCheckType === 'comprehensive') {
@@ -673,22 +626,17 @@
 
         if (data.stats) {
             const s = data.stats;
-            const cU = t('stats.chars');
-            const wU = t('stats.words');
-            const sU = t('stats.sent');
-            const pU = t('stats.para');
-            const rU = t('stats.read');
+            const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent'), pU = t('stats.para'), rU = t('stats.read');
             statChars.textContent = `${s.chars || s.characters} ${cU}`;
             statWords.textContent = `${s.words} ${wU}`;
             statSentences.textContent = `${s.sentences} ${sU}`;
             statParas.textContent = `${s.paragraphs} ${pU}`;
-            statReadTime.textContent = s.reading_time_sec > 60
-                ? `~${Math.round(s.reading_time_sec/60)}m ${rU}`
-                : `~${s.reading_time_sec}s ${rU}`;
+            statReadTime.textContent = s.reading_time_sec > 60 ? `~${Math.round(s.reading_time_sec/60)}m ${rU}` : `~${s.reading_time_sec}s ${rU}`;
         }
 
         if (data.elapsed_ms) {
-            $('#processingTime').textContent = `⏱ ${data.elapsed_ms}ms`;
+            const el = $('#processingTime');
+            if (el) el.textContent = `⏱ ${data.elapsed_ms}ms`;
         }
     }
 
@@ -696,55 +644,42 @@
     function displayMetrics(data) {
         const before = data.metrics_before;
         const after = data.metrics_after;
-
         if (!before || !after) return;
 
         metricsDashboard.style.display = 'block';
 
-        // Artificiality
         animateValuePair('artificialityBefore', 'artificialityAfter', before.artificiality_score, after.artificiality_score);
         animateGauge('artificialityGauge', after.artificiality_score / 100);
         const dir = after.artificiality_score < before.artificiality_score ? '📉' : after.artificiality_score > before.artificiality_score ? '📈' : '➡️';
-        $('#artificialityDir').textContent = dir;
+        const dirEl = $('#artificialityDir');
+        if (dirEl) dirEl.textContent = dir;
 
-        // Other metrics
         setupMetricBar('sentLen', before.avg_sentence_length, after.avg_sentence_length, 40);
         setupMetricBar('bureaRatio', before.bureaucratic_ratio, after.bureaucratic_ratio, 1);
         setupMetricBar('burst', before.burstiness_score, after.burstiness_score, 2);
         setupMetricBar('connRatio', before.connector_ratio, after.connector_ratio, 0.3);
         setupMetricBar('repScore', before.repetition_score, after.repetition_score, 1);
 
-        // Changes
         if (data.changes && data.changes.length > 0) {
             changesSection.style.display = 'block';
             changesList.innerHTML = '';
             data.changes.forEach(ch => {
                 const item = document.createElement('div');
                 item.className = 'change-item';
-                item.innerHTML = `
-                    <span class="change-stage">${escapeHtml(ch.stage || '')}</span>
-                    <del>${escapeHtml(ch.old || ch.before || '')}</del> →
-                    <ins>${escapeHtml(ch.new || ch.after || '')}</ins>
-                `;
+                item.innerHTML = `<span class="change-stage">${escapeHtml(ch.stage || '')}</span><del>${escapeHtml(ch.old || ch.before || '')}</del> → <ins>${escapeHtml(ch.new || ch.after || '')}</ins>`;
                 changesList.appendChild(item);
             });
         }
 
-        // Processing info
         const pTime = $('#processingTime');
         const dLang = $('#detectedLang');
-        const aPro = $('#appliedProfile');
-        if (data.elapsed_ms) pTime.textContent = `⏱ ${data.elapsed_ms}ms`;
-        if (data.detected_lang) dLang.textContent = `🌍 ${data.detected_lang}`;
-        aPro.textContent = `📋 ${currentProfile}`;
+        if (data.elapsed_ms && pTime) pTime.textContent = `⏱ ${data.elapsed_ms}ms`;
+        if (data.detected_lang && dLang) dLang.textContent = `🌍 ${data.detected_lang}`;
     }
 
     function setupMetricBar(prefix, before, after, max) {
-        const bEl = $(`#${prefix}Before`);
-        const aEl = $(`#${prefix}After`);
-        const bBar = $(`#${prefix}BarBefore`);
-        const aBar = $(`#${prefix}BarAfter`);
-
+        const bEl = $(`#${prefix}Before`), aEl = $(`#${prefix}After`);
+        const bBar = $(`#${prefix}BarBefore`), aBar = $(`#${prefix}BarAfter`);
         if (bEl) animateNumber(bEl, before, isFloat(before));
         if (aEl) animateNumber(aEl, after, isFloat(after));
         if (bBar) setTimeout(() => { bBar.style.width = `${Math.min(before / max * 100, 100)}%`; }, 100);
@@ -752,35 +687,24 @@
     }
 
     function updateMetricPair(beforeId, afterId, bVal, aVal, max, barBeforeId, barAfterId) {
-        const bEl = $(`#${beforeId}`);
-        const aEl = $(`#${afterId}`);
+        const bEl = $(`#${beforeId}`), aEl = $(`#${afterId}`);
         if (bEl) animateNumber(bEl, bVal, isFloat(bVal));
         if (aEl) animateNumber(aEl, aVal, isFloat(aVal));
-        if (barBeforeId) {
-            const bb = $(`#${barBeforeId}`);
-            if (bb) setTimeout(() => { bb.style.width = `${Math.min(bVal / max * 100, 100)}%`; }, 100);
-        }
-        if (barAfterId) {
-            const ab = $(`#${barAfterId}`);
-            if (ab) setTimeout(() => { ab.style.width = `${Math.min(aVal / max * 100, 100)}%`; }, 200);
-        }
+        if (barBeforeId) { const bb = $(`#${barBeforeId}`); if (bb) setTimeout(() => { bb.style.width = `${Math.min(bVal / max * 100, 100)}%`; }, 100); }
+        if (barAfterId) { const ab = $(`#${barAfterId}`); if (ab) setTimeout(() => { ab.style.width = `${Math.min(aVal / max * 100, 100)}%`; }, 200); }
     }
 
     function animateValuePair(beforeId, afterId, bVal, aVal) {
-        const bEl = $(`#${beforeId}`);
-        const aEl = $(`#${afterId}`);
+        const bEl = $(`#${beforeId}`), aEl = $(`#${afterId}`);
         if (bEl) animateNumber(bEl, bVal, isFloat(bVal));
         if (aEl) animateNumber(aEl, aVal, isFloat(aVal));
     }
 
-    function isFloat(v) {
-        return v !== Math.floor(v);
-    }
+    function isFloat(v) { return v !== Math.floor(v); }
 
-    // === AI Detection Display ===
+    // === AI Detection Display (with factor translation) ===
     function displayAiDetection(ai) {
         if (!ai) return;
-
         aiDetectionPanel.style.display = 'block';
 
         const score = ai.score || 0;
@@ -788,12 +712,9 @@
         const circumference = 2 * Math.PI * 52;
         const offset = circumference - (score / 100) * circumference;
 
-        ensureAiGradient(score);
+        ensureAiGradient();
 
-        setTimeout(() => {
-            ring.style.strokeDashoffset = offset;
-        }, 100);
-
+        setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
         animateNumber($('#aiScoreNumber'), score, false);
 
         const verdict = $('#aiVerdict');
@@ -811,19 +732,22 @@
             const row = document.createElement('div');
             row.className = 'ai-factor-row';
             const level = f.value < 0.35 ? 'low' : f.value < 0.65 ? 'medium' : 'high';
+
+            // Translate factor name
+            const i18nKey = FACTOR_KEYS[f.name];
+            const translatedName = i18nKey ? t(i18nKey) : f.name;
+
             row.innerHTML = `
-                <span class="ai-factor-name">${escapeHtml(f.name)}</span>
+                <span class="ai-factor-name">${escapeHtml(translatedName)}</span>
                 <div class="ai-factor-bar"><div class="ai-factor-fill ${level}" style="width: 0%"></div></div>
                 <span class="ai-factor-value">${Math.round(f.value * 100)}%</span>
             `;
             factorsEl.appendChild(row);
-            setTimeout(() => {
-                row.querySelector('.ai-factor-fill').style.width = `${Math.round(f.value * 100)}%`;
-            }, 200);
+            setTimeout(() => { row.querySelector('.ai-factor-fill').style.width = `${Math.round(f.value * 100)}%`; }, 200);
         });
     }
 
-    function ensureAiGradient(score) {
+    function ensureAiGradient() {
         if (document.getElementById('aiGaugeGrad')) return;
         const svg = document.querySelector('.ai-ring');
         if (!svg) return;
@@ -832,14 +756,12 @@
         grad.setAttribute('id', 'aiGaugeGrad');
         grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%');
         grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '0%');
-
         const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
         stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#10b981');
         const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
         stop2.setAttribute('offset', '50%'); stop2.setAttribute('stop-color', '#f59e0b');
         const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
         stop3.setAttribute('offset', '100%'); stop3.setAttribute('stop-color', '#ef4444');
-
         grad.appendChild(stop1); grad.appendChild(stop2); grad.appendChild(stop3);
         defs.appendChild(grad);
         svg.insertBefore(defs, svg.firstChild);
@@ -854,49 +776,6 @@
         return t('ai.generated');
     }
 
-    // === Diff View ===
-    function toggleDiffView() {
-        showDiff = !showDiff;
-        diffToggle.classList.toggle('active', showDiff);
-        if (lastResult) {
-            if (showDiff) {
-                renderDiff(inputText.value, lastResult.text);
-            } else {
-                resultText.textContent = lastResult.text;
-            }
-        }
-    }
-
-    function renderDiff(original, modified) {
-        const origWords = original.split(/(\s+)/);
-        const modWords = modified.split(/(\s+)/);
-        let html = '';
-
-        let i = 0, j = 0;
-        while (i < origWords.length || j < modWords.length) {
-            if (i < origWords.length && j < modWords.length && origWords[i] === modWords[j]) {
-                html += escapeHtml(origWords[i]);
-                i++; j++;
-            } else if (j < modWords.length && (i >= origWords.length || origWords.indexOf(modWords[j], i) === -1 || j - i > 3)) {
-                if (modWords[j].trim()) {
-                    html += `<span class="diff-ins">${escapeHtml(modWords[j])}</span>`;
-                } else {
-                    html += escapeHtml(modWords[j]);
-                }
-                j++;
-            } else if (i < origWords.length) {
-                if (origWords[i].trim()) {
-                    html += `<span class="diff-del">${escapeHtml(origWords[i])}</span>`;
-                } else {
-                    html += escapeHtml(origWords[i]);
-                }
-                i++;
-            }
-        }
-
-        resultText.innerHTML = html;
-    }
-
     // === Animations ===
     function animateNumber(el, target, isDecimal) {
         if (!el) return;
@@ -904,7 +783,6 @@
         const diff = target - start;
         const duration = 800;
         const startTime = performance.now();
-
         function update(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
@@ -921,9 +799,7 @@
         if (!el) return;
         const maxDash = 157;
         const offset = maxDash - (fraction * maxDash);
-        setTimeout(() => {
-            el.style.strokeDashoffset = Math.max(offset, 0);
-        }, 200);
+        setTimeout(() => { el.style.strokeDashoffset = Math.max(offset, 0); }, 200);
     }
 
     function setupAnimatedCounters() {
@@ -932,13 +808,11 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const el = entry.target;
-                    const target = parseInt(el.dataset.count);
-                    animateNumber(el, target, false);
+                    animateNumber(el, parseInt(el.dataset.count), false);
                     observer.unobserve(el);
                 }
             });
         }, { threshold: 0.5 });
-
         counters.forEach(el => observer.observe(el));
     }
 
@@ -959,19 +833,6 @@
             document.body.appendChild(piece);
             setTimeout(() => piece.remove(), 4000);
         }
-    }
-
-    function addRipple(el) {
-        const ripple = document.createElement('span');
-        ripple.className = 'ripple';
-        const rect = el.getBoundingClientRect();
-        ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
-        ripple.style.left = '0px';
-        ripple.style.top = '0px';
-        el.style.position = 'relative';
-        el.style.overflow = 'hidden';
-        el.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 600);
     }
 
     // === Toast ===
@@ -997,39 +858,22 @@
         detectAiBtn.disabled = state;
     }
 
-    function copyResult() {
-        const text = lastResult ? lastResult.text : resultText.textContent;
-        if (!text || text === t('editor.result.placeholder')) return;
-        navigator.clipboard.writeText(text).then(() => {
-            showToast('success', t('toast.copied'));
-        }).catch(() => {
-            showToast('error', t('toast.copy.fail'));
-        });
-    }
-
     function clearAll() {
         inputText.value = '';
-        resultText.innerHTML = `<div class="placeholder-output">
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            <p data-i18n="editor.result.placeholder">${escapeHtml(t('editor.result.placeholder'))}</p>
-        </div>`;
         lastResult = null;
         showDiff = false;
-        changeBadge.style.display = 'none';
         metricsDashboard.style.display = 'none';
         aiDetectionPanel.style.display = 'none';
         if (readabilityPanel) readabilityPanel.style.display = 'none';
         if (stylePanel) stylePanel.style.display = 'none';
-        changesSection.style.display = 'none';
-        resultStats.style.display = 'none';
-        copyBtn.disabled = true;
-        diffToggle.disabled = true;
+        if (changesSection) changesSection.style.display = 'none';
         humanizeBtn.disabled = true;
         analyzeOnlyBtn.disabled = true;
         detectAiBtn.disabled = true;
         if (urlInput) urlInput.value = '';
         if (fileName) fileName.style.display = 'none';
         if (fileInput) fileInput.value = '';
+        closeModal();
         updateInputStats();
         showToast('info', t('toast.cleared'));
     }

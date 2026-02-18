@@ -21,18 +21,10 @@
             'hero.subtitle': 'Algorithmic text naturalization — normalize typography, simplify bureaucratic language, diversify sentence structure, boost burstiness & perplexity. <strong>9 languages</strong>, zero external API calls.',
             'hero.stat.stages': 'Pipeline Stages',
             'hero.stat.languages': 'Languages',
-            'hero.stat.profiles': 'Profiles',
             'hero.stat.delay': 'Network Delay',
 
             // Controls
             'ctrl.language': 'Language',
-            'ctrl.profile': 'Profile',
-            'ctrl.intensity': 'Intensity',
-            'ctrl.slider.typo': 'Typography',
-            'ctrl.slider.light': 'Light',
-            'ctrl.slider.medium': 'Medium',
-            'ctrl.slider.strong': 'Strong',
-            'ctrl.slider.max': 'Maximum',
 
             // Input Source
             'source.text': 'Text',
@@ -148,8 +140,8 @@
             'feat.fast.desc': 'Pure algorithmic processing. Zero external API calls. Instant results.',
             'feat.private.title': '100% Private',
             'feat.private.desc': 'All processing happens on server. Your data never leaves the system.',
-            'feat.control.title': 'Fine-Tuned Control',
-            'feat.control.desc': '5 profiles, intensity slider, keyword preservation, and preserve options.',
+            'feat.upload.title': 'File & URL Upload',
+            'feat.upload.desc': 'Extract text from files or web pages. Supports TXT, HTML, MD and more.',
             'feat.lang.title': '9+ Languages',
             'feat.lang.desc': 'Full dictionary support for 9 languages plus universal processor for any other.',
             'feat.ai.title': 'AI Detector',
@@ -157,15 +149,45 @@
             'feat.metrics.title': 'Readability Metrics',
             'feat.metrics.desc': 'Burstiness, artificiality, bureaucratic ratio, connector analysis built-in.',
 
+            // AI Factor translations
+            'factor.artificiality': 'Artificiality',
+            'factor.bureaucratic': 'Bureaucratic Language',
+            'factor.connector': 'Connector Density',
+            'factor.uniformity': 'Sentence Uniformity',
+            'factor.diversity': 'Vocabulary Diversity',
+            'factor.repetition': 'Repetition Level',
+
+            // Modal
+            'modal.title': 'Humanization Complete',
+
+            // Branding
+            'brand.by': 'by <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
+
             // API
             'api.title': 'REST API',
             'api.subtitle': 'Integrate HumanizeKit into your workflow',
             'api.humanize.desc': 'Transform text to sound more natural',
-            'api.analyze.desc': 'Analyze text metrics + AI detection',
+            'api.analyze.desc': 'Analyze text metrics and detect AI patterns',
             'api.info.desc': 'Service metadata and supported options',
+            'api.extract.desc': 'Extract text from uploaded files or URLs',
+            'api.params': 'Parameters',
+            'api.param': 'Parameter',
+            'api.type': 'Type',
+            'api.required': 'Required',
+            'api.description': 'Description',
+            'api.request': 'Request',
+            'api.response': 'Response',
+            'api.p.text': 'The text to humanize',
+            'api.p.lang': 'Language code (auto, ru, uk, en, de, fr, es, pl, pt, it). Default: auto-detect',
+            'api.p.profile': 'Processing profile: chat, web, seo, docs, formal. Default: web',
+            'api.p.intensity': 'Processing intensity 0-100. Default: 60',
+            'api.p.keywords': 'Words/phrases to preserve unchanged',
+            'api.p.text.analyze': 'The text to analyze',
+            'api.p.lang.analyze': 'Language code. Default: auto-detect',
 
             // Footer
             'footer.desc': 'Algorithmic text naturalization service',
+            'footer.developed': 'Developed by',
             'footer.powered': 'Powered by',
             'footer.engine': 'TextHumanize',
 
@@ -202,18 +224,10 @@
             'hero.subtitle': 'Алгоритмическая натурализация текста — нормализация типографики, упрощение канцелярского языка, разнообразие структуры предложений, повышение вариативности. <strong>9 языков</strong>, без внешних API-вызовов.',
             'hero.stat.stages': 'Этапов обработки',
             'hero.stat.languages': 'Языков',
-            'hero.stat.profiles': 'Профилей',
             'hero.stat.delay': 'Задержка сети',
 
             // Controls
             'ctrl.language': 'Язык',
-            'ctrl.profile': 'Профиль',
-            'ctrl.intensity': 'Интенсивность',
-            'ctrl.slider.typo': 'Типографика',
-            'ctrl.slider.light': 'Лёгкая',
-            'ctrl.slider.medium': 'Средняя',
-            'ctrl.slider.strong': 'Сильная',
-            'ctrl.slider.max': 'Максимум',
 
             // Input Source
             'source.text': 'Текст',
@@ -329,8 +343,8 @@
             'feat.fast.desc': 'Чисто алгоритмическая обработка. Без внешних API. Мгновенный результат.',
             'feat.private.title': '100% приватность',
             'feat.private.desc': 'Вся обработка на сервере. Ваши данные никуда не уходят.',
-            'feat.control.title': 'Тонкая настройка',
-            'feat.control.desc': '5 профилей, слайдер интенсивности, сохранение ключевых слов.',
+            'feat.upload.title': 'Загрузка файлов и URL',
+            'feat.upload.desc': 'Извлечение текста из файлов и веб-страниц. Поддержка TXT, HTML, MD и других форматов.',
             'feat.lang.title': '9+ языков',
             'feat.lang.desc': 'Полная поддержка словарей для 9 языков и универсальный процессор для остальных.',
             'feat.ai.title': 'Детектор ИИ',
@@ -338,15 +352,45 @@
             'feat.metrics.title': 'Метрики читаемости',
             'feat.metrics.desc': 'Вариативность, искусственность, канцеляризмы, анализ связок — всё встроено.',
 
+            // AI Factor translations
+            'factor.artificiality': 'Искусственность',
+            'factor.bureaucratic': 'Канцелярский язык',
+            'factor.connector': 'Плотность связок',
+            'factor.uniformity': 'Однородность предложений',
+            'factor.diversity': 'Разнообразие словаря',
+            'factor.repetition': 'Уровень повторов',
+
+            // Modal
+            'modal.title': 'Гуманизация завершена',
+
+            // Branding
+            'brand.by': 'от <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
+
             // API
             'api.title': 'REST API',
             'api.subtitle': 'Интегрируйте HumanizeKit в свой рабочий процесс',
             'api.humanize.desc': 'Преобразование текста в более естественный',
-            'api.analyze.desc': 'Анализ метрик текста + детекция ИИ',
+            'api.analyze.desc': 'Анализ метрик текста и детекция ИИ-паттернов',
             'api.info.desc': 'Метаданные сервиса и поддерживаемые опции',
+            'api.extract.desc': 'Извлечение текста из файлов или URL-адресов',
+            'api.params': 'Параметры',
+            'api.param': 'Параметр',
+            'api.type': 'Тип',
+            'api.required': 'Обязательный',
+            'api.description': 'Описание',
+            'api.request': 'Запрос',
+            'api.response': 'Ответ',
+            'api.p.text': 'Текст для гуманизации',
+            'api.p.lang': 'Код языка (auto, ru, uk, en, de, fr, es, pl, pt, it). По умолчанию: автоопределение',
+            'api.p.profile': 'Профиль обработки: chat, web, seo, docs, formal. По умолчанию: web',
+            'api.p.intensity': 'Интенсивность обработки 0-100. По умолчанию: 60',
+            'api.p.keywords': 'Слова/фразы для сохранения без изменений',
+            'api.p.text.analyze': 'Текст для анализа',
+            'api.p.lang.analyze': 'Код языка. По умолчанию: автоопределение',
 
             // Footer
             'footer.desc': 'Сервис алгоритмической натурализации текста',
+            'footer.developed': 'Разработано',
             'footer.powered': 'Работает на',
             'footer.engine': 'TextHumanize',
 
@@ -383,18 +427,10 @@
             'hero.subtitle': 'Алгоритмічна натуралізація тексту — нормалізація типографіки, спрощення канцелярської мови, урізноманітнення структури речень, підвищення варіативності. <strong>9 мов</strong>, без зовнішніх API-викликів.',
             'hero.stat.stages': 'Етапів обробки',
             'hero.stat.languages': 'Мов',
-            'hero.stat.profiles': 'Профілів',
             'hero.stat.delay': 'Затримка мережі',
 
             // Controls
             'ctrl.language': 'Мова',
-            'ctrl.profile': 'Профіль',
-            'ctrl.intensity': 'Інтенсивність',
-            'ctrl.slider.typo': 'Типографіка',
-            'ctrl.slider.light': 'Легка',
-            'ctrl.slider.medium': 'Середня',
-            'ctrl.slider.strong': 'Сильна',
-            'ctrl.slider.max': 'Максимум',
 
             // Input Source
             'source.text': 'Текст',
@@ -510,8 +546,8 @@
             'feat.fast.desc': 'Чисто алгоритмічна обробка. Без зовнішніх API. Миттєвий результат.',
             'feat.private.title': '100% приватність',
             'feat.private.desc': 'Вся обробка на сервері. Ваші дані нікуди не йдуть.',
-            'feat.control.title': 'Тонке налаштування',
-            'feat.control.desc': '5 профілів, слайдер інтенсивності, збереження ключових слів.',
+            'feat.upload.title': 'Завантаження файлів та URL',
+            'feat.upload.desc': 'Витяг тексту з файлів і веб-сторінок. Підтримка TXT, HTML, MD та інших форматів.',
             'feat.lang.title': '9+ мов',
             'feat.lang.desc': 'Повна підтримка словників для 9 мов та універсальний процесор для решти.',
             'feat.ai.title': 'Детектор ШІ',
@@ -519,15 +555,45 @@
             'feat.metrics.title': 'Метрики читабельності',
             'feat.metrics.desc': 'Варіативність, штучність, канцеляризми, аналіз зв\'язок — все вбудовано.',
 
+            // AI Factor translations
+            'factor.artificiality': 'Штучність',
+            'factor.bureaucratic': 'Канцелярська мова',
+            'factor.connector': 'Щільність зв\'язок',
+            'factor.uniformity': 'Однорідність речень',
+            'factor.diversity': 'Різноманітність словника',
+            'factor.repetition': 'Рівень повторів',
+
+            // Modal
+            'modal.title': 'Гуманізація завершена',
+
+            // Branding
+            'brand.by': 'від <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
+
             // API
             'api.title': 'REST API',
             'api.subtitle': 'Інтегруйте HumanizeKit у свій робочий процес',
             'api.humanize.desc': 'Перетворення тексту на більш природний',
-            'api.analyze.desc': 'Аналіз метрик тексту + детекція ШІ',
+            'api.analyze.desc': 'Аналіз метрик тексту та детекція ШІ-паттернів',
             'api.info.desc': 'Метадані сервісу та підтримувані опції',
+            'api.extract.desc': 'Витяг тексту з файлів або URL-адрес',
+            'api.params': 'Параметри',
+            'api.param': 'Параметр',
+            'api.type': 'Тип',
+            'api.required': 'Обов\'язковий',
+            'api.description': 'Опис',
+            'api.request': 'Запит',
+            'api.response': 'Відповідь',
+            'api.p.text': 'Текст для гуманізації',
+            'api.p.lang': 'Код мови (auto, ru, uk, en, de, fr, es, pl, pt, it). За замовчуванням: автовизначення',
+            'api.p.profile': 'Профіль обробки: chat, web, seo, docs, formal. За замовчуванням: web',
+            'api.p.intensity': 'Інтенсивність обробки 0-100. За замовчуванням: 60',
+            'api.p.keywords': 'Слова/фрази для збереження без змін',
+            'api.p.text.analyze': 'Текст для аналізу',
+            'api.p.lang.analyze': 'Код мови. За замовчуванням: автовизначення',
 
             // Footer
             'footer.desc': 'Сервіс алгоритмічної натуралізації тексту',
+            'footer.developed': 'Розроблено',
             'footer.powered': 'Працює на',
             'footer.engine': 'TextHumanize',
 
