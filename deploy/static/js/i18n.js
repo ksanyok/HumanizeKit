@@ -1,702 +1,466 @@
 /**
- * HumanizeKit — Internationalization (i18n)
- * Supports: English (en), Russian (ru), Ukrainian (uk)
+ * HumanizeKit v0.8.0 — i18n (EN / RU / UK)
  */
-(function() {
-    'use strict';
+window.I18n = (function () {
+    let locale = 'en';
 
     const translations = {
         en: {
-            // Header & Nav
-            'nav.tool': 'Tool',
-            'nav.pipeline': 'Pipeline',
-            'nav.api': 'API',
-
-            // Hero
-            'hero.badge': 'Powered by TextHumanize Engine',
-            'hero.title.1': 'Transform ',
-            'hero.title.highlight': 'AI Text',
-            'hero.title.2': ' into',
-            'hero.title.3': 'Natural Human Writing',
-            'hero.subtitle': 'Algorithmic text naturalization — normalize typography, simplify bureaucratic language, diversify sentence structure, boost burstiness & perplexity. <strong>9 languages</strong>, zero external API calls.',
-            'hero.stat.stages': 'Pipeline Stages',
-            'hero.stat.languages': 'Languages',
-            'hero.stat.delay': 'Network Delay',
-
-            // Controls
-            'ctrl.language': 'Language',
-
-            // Input Source
-            'source.text': 'Text',
-            'source.file': 'File',
-            'source.url': 'URL',
-
-            // Editor
-            'editor.original': 'Original Text',
-            'editor.result': 'Humanized Result',
-            'editor.placeholder': 'Paste your AI-generated text here...\n\nExample: Furthermore, it is important to note that the implementation of cloud computing facilitates the optimization of business processes.',
-            'editor.result.placeholder': 'Your humanized text will appear here',
-            'editor.paste': 'Paste from clipboard',
-            'editor.clear': 'Clear text',
-            'editor.copy': 'Copy result',
-            'editor.diff': 'Toggle diff view',
-
-            // File Upload
-            'file.drop': 'Drop file here or click to choose',
-            'file.formats': 'Supports: TXT, HTML, MD',
-            'file.choose': 'Choose File',
-
-            // URL Input
-            'url.placeholder': 'Enter URL to extract text from...',
-            'url.fetch': 'Fetch',
-
-            // Action Buttons
-            'btn.humanize': 'Humanize',
-            'btn.processing': 'Processing...',
-            'btn.analyze': 'Analyze Only',
-            'btn.detect': 'AI Detector',
-            'btn.shortcut': '⌘+Enter to process',
-
-            // Check Types
-            'check.type': 'Check Type',
-            'check.comprehensive': 'Comprehensive',
-            'check.ai': 'AI Detection',
-            'check.readability': 'Readability',
-            'check.style': 'Style Quality',
-
-            // Stats
-            'stats.chars': 'chars',
-            'stats.words': 'words',
-            'stats.sent': 'sent.',
-            'stats.para': 'para.',
-            'stats.read': 'read',
-
-            // AI Detection
-            'ai.title': 'AI Detection Analysis',
-            'ai.score': 'AI Score',
-            'ai.human.written': '✅ Human Written',
-            'ai.likely.human': '🟢 Likely Human',
-            'ai.mixed': '🟡 Mixed / Edited',
-            'ai.possibly.ai': '🟠 Possibly AI',
-            'ai.likely.ai': '🔴 Likely AI',
-            'ai.generated': '⛔ AI Generated',
-
-            // Metrics
-            'metrics.title': 'Analysis Dashboard',
-            'metrics.artificiality': 'Artificiality Score',
-            'metrics.sentlen': 'Avg Sentence Length',
-            'metrics.bureau': 'Bureaucratic Ratio',
-            'metrics.burst': 'Burstiness',
-            'metrics.connector': 'Connector Ratio',
-            'metrics.repetition': 'Repetition Score',
-            'metrics.before': 'Before',
-            'metrics.after': 'After',
-
-            // Readability Panel
-            'readability.title': 'Readability Analysis',
-            'readability.grade': 'Reading Level',
-            'readability.avgword': 'Avg Word Length',
-            'readability.avgsentence': 'Avg Sentence Length',
-            'readability.unique': 'Vocabulary Richness',
-            'readability.readtime': 'Reading Time',
-
-            // Style Panel
-            'style.title': 'Style Quality',
-            'style.diversity': 'Vocabulary Diversity',
-            'style.burstiness': 'Sentence Variation',
-            'style.formality': 'Formality Level',
-            'style.connectors': 'Connector Usage',
-
-            // Changes
-            'changes.title': 'Detailed Changes',
-
-            // Pipeline
-            'pipeline.title': '10-Stage Processing Pipeline',
-            'pipeline.subtitle': 'Each text passes through a carefully orchestrated series of transformations',
-            'pipe.1.title': 'Segmentation',
-            'pipe.1.desc': 'Protect code blocks, URLs, emails, brands',
-            'pipe.2.title': 'Typography',
-            'pipe.2.desc': 'Normalize dashes, quotes, ellipses, punctuation',
-            'pipe.3.title': 'Debureaucratization',
-            'pipe.3.desc': 'Replace bureaucratic/formal words',
-            'pipe.4.title': 'Structure',
-            'pipe.4.desc': 'Diversify sentence openings and structure',
-            'pipe.5.title': 'Repetitions',
-            'pipe.5.desc': 'Reduce word/phrase repetitions with synonyms',
-            'pipe.6.title': 'Liveliness',
-            'pipe.6.desc': 'Inject natural phrasing, colloquialisms',
-            'pipe.7.title': 'Universal',
-            'pipe.7.desc': 'Statistical processing for ALL languages',
-            'pipe.8.title': 'Naturalization',
-            'pipe.8.desc': 'Style naturalization: burstiness & perplexity',
-            'pipe.9.title': 'Validation',
-            'pipe.9.desc': 'Quality check, rollback if needed',
-            'pipe.10.title': 'Restore',
-            'pipe.10.desc': 'Restore protected segments',
-
-            // Features
-            'features.title': 'Key Features',
-            'feat.fast.title': 'Lightning Fast',
-            'feat.fast.desc': 'Pure algorithmic processing. Zero external API calls. Instant results.',
-            'feat.private.title': '100% Private',
-            'feat.private.desc': 'All processing happens on server. Your data never leaves the system.',
-            'feat.upload.title': 'File & URL Upload',
-            'feat.upload.desc': 'Extract text from files or web pages. Supports TXT, HTML, MD and more.',
-            'feat.lang.title': '9+ Languages',
-            'feat.lang.desc': 'Full dictionary support for 9 languages plus universal processor for any other.',
-            'feat.ai.title': 'AI Detector',
-            'feat.ai.desc': 'Built-in heuristic AI detection with detailed factor analysis and scoring.',
-            'feat.metrics.title': 'Readability Metrics',
-            'feat.metrics.desc': 'Burstiness, artificiality, bureaucratic ratio, connector analysis built-in.',
-
-            // AI Factor translations
-            'factor.artificiality': 'Artificiality',
-            'factor.bureaucratic': 'Bureaucratic Language',
-            'factor.connector': 'Connector Density',
-            'factor.uniformity': 'Sentence Uniformity',
-            'factor.diversity': 'Vocabulary Diversity',
-            'factor.repetition': 'Repetition Level',
-
-            // Modal
-            'modal.title': 'Humanization Complete',
-
-            // Branding
+            // Brand & Nav
             'brand.by': 'by <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
+            'nav.tools': 'Tools',
+            'nav.api': 'API',
+
+            // Hero
+            'hero.release': 'Release',
+            'hero.title': 'AI Text Toolkit',
+            'hero.subtitle': '10 professional tools for text analysis, humanization, and protection. Powered by TextHumanize PHP library — zero AI APIs, pure algorithmic processing.',
+
+            // Tool names & descriptions
+            'tool.humanize.name': 'Humanize',
+            'tool.humanize.desc': 'Full 11-stage pipeline',
+            'tool.aiDetect.name': 'AI Detector',
+            'tool.aiDetect.desc': '12-metric analysis',
+            'tool.analyze.name': 'Text Analyzer',
+            'tool.analyze.desc': 'Stats & AI detection',
+            'tool.tone.name': 'Tone Analyzer',
+            'tool.tone.desc': '7 tone levels',
+            'tool.toneAdjust.name': 'Tone Adjuster',
+            'tool.toneAdjust.desc': 'Change text tone',
+            'tool.coherence.name': 'Coherence',
+            'tool.coherence.desc': 'Text flow analysis',
+            'tool.watermark.name': 'Watermark Detector',
+            'tool.watermark.desc': '6 watermark types',
+            'tool.spin.name': 'Content Spinner',
+            'tool.spin.desc': 'Unique text variants',
+            'tool.paraphrase.name': 'Paraphraser',
+            'tool.paraphrase.desc': 'Syntactic transforms',
+            'tool.explain.name': 'Explain Changes',
+            'tool.explain.desc': 'Before/after analysis',
+
+            // Badges
+            'badge.core': 'Core',
+            'badge.new': 'New',
+
+            // Workspace
+            'ws.placeholder': 'Paste or type your text here... (Ctrl+Enter to run)',
+
+            // Stats
+            'stat.chars': 'chars',
+            'stat.words': 'words',
+            'stat.sentences': 'sentences',
+            'stat.paragraphs': 'paragraphs',
+            'stat.uniqueRatio': 'Unique ratio',
+            'stat.readingTime': 'Reading time',
+
+            // Controls
+            'ctrl.lang': 'Language',
+            'ctrl.profile': 'Profile',
+            'ctrl.intensity': 'Intensity',
+            'ctrl.target': 'Target Tone',
+            'ctrl.variants': 'Variants',
+            'ctrl.action': 'Action',
+            'ctrl.suggest': 'Suggestions',
+            'ctrl.seed': 'Seed',
+            'lang.auto': 'Auto-detect',
+
+            // Profiles
+            'profile.chat': 'Chat',
+            'profile.web': 'Web',
+            'profile.seo': 'SEO',
+            'profile.docs': 'Docs',
+            'profile.formal': 'Formal',
+
+            // Tones
+            'tone.formal': 'Formal',
+            'tone.academic': 'Academic',
+            'tone.professional': 'Professional',
+            'tone.neutral': 'Neutral',
+            'tone.friendly': 'Friendly',
+            'tone.casual': 'Casual',
+            'tone.marketing': 'Marketing',
+
+            // Watermark
+            'wm.detect': 'Detect',
+            'wm.clean': 'Clean',
+            'wm.found': 'Watermarks detected',
+            'wm.notFound': 'No watermarks found',
+            'wm.cleaned': 'Watermarks cleaned',
+            'wm.types': 'Detected types',
+            'wm.cleanedVersion': 'Cleaned version',
+
+            // Buttons
+            'btn.run': 'Run Tool',
+            'btn.extract': 'Extract',
+
+            // Results
+            'result.title': 'Result',
+            'result.scores': 'Individual Scores',
+            'result.stats': 'Text Statistics',
+            'result.issues': 'Issues Found',
+            'result.suggestions': 'Improvement Suggestions',
+            'result.changes': 'Changes Made',
+            'result.original': 'Original',
+            'result.humanized': 'Humanized',
+            'result.recommendations': 'Recommendations',
+
+            // Metrics
+            'metric.changeRatio': 'Change Ratio',
+            'metric.lang': 'Detected Language',
+            'diff.removed': 'Removed',
+            'diff.added': 'Added',
+            'diff.removedTip': 'Removed',
+            'diff.addedTip': 'Inserted',
+            'diff.replacedWithTip': 'Replaced with',
+            'diff.replacedFromTip': 'Was',
+            'diff.resultLabel': 'Result',
+            'diff.detailsTitle': 'Detailed changes',
+            'diff.colBefore': 'Before',
+            'diff.colAfter': 'After',
+            'diff.colType': 'Type',
+            'diff.type_replace': 'Replace',
+            'diff.type_delete': 'Delete',
+            'diff.type_insert': 'Insert',
+            'metric.aiBefore': 'AI Score Before',
+            'metric.aiAfter': 'AI Score After',
+            'metric.confidence': 'Confidence',
+            'metric.humanProb': 'Human Probability',
+            'metric.artificiality': 'Artificiality',
+            'metric.avgSentLen': 'Avg Sentence Length',
+            'metric.bureaucratic': 'Bureaucratic',
+            'metric.connectors': 'Connectors',
+            'metric.repetition': 'Repetition',
+            'metric.burstiness': 'Burstiness',
+            'metric.primaryTone': 'Primary Tone',
+            'metric.formality': 'Formality',
+            'metric.subjectivity': 'Subjectivity',
+            'metric.targetTone': 'Target Tone',
+            'metric.intensity': 'Intensity',
+            'metric.overall': 'Overall Score',
+            'metric.lexicalCohesion': 'Lexical Cohesion',
+            'metric.transitions': 'Transitions',
+            'metric.topicConsistency': 'Topic Consistency',
+            'metric.openingDiversity': 'Opening Diversity',
+            'metric.uniqueness': 'Uniqueness',
+            'metric.variants': 'Variants',
+
+            // Modal
+            'modal.url.title': 'Extract from URL',
+
+            // Toast
+            'toast.extracted': 'Text extracted successfully',
+            'toast.copied': 'Copied to clipboard',
 
             // API
-            'api.title': 'REST API',
-            'api.subtitle': 'Integrate HumanizeKit into your workflow',
-            'api.humanize.desc': 'Transform text to sound more natural',
-            'api.analyze.desc': 'Analyze text metrics and detect AI patterns',
-            'api.info.desc': 'Service metadata and supported options',
-            'api.extract.desc': 'Extract text from uploaded files or URLs',
-            'api.params': 'Parameters',
-            'api.param': 'Parameter',
-            'api.type': 'Type',
-            'api.required': 'Required',
-            'api.description': 'Description',
-            'api.request': 'Request',
-            'api.response': 'Response',
-            'api.p.text': 'The text to humanize',
-            'api.p.lang': 'Language code (auto, ru, uk, en, de, fr, es, pl, pt, it). Default: auto-detect',
-            'api.p.profile': 'Processing profile: chat, web, seo, docs, formal. Default: web',
-            'api.p.intensity': 'Processing intensity 0-100. Default: 60',
-            'api.p.keywords': 'Words/phrases to preserve unchanged',
-            'api.p.text.analyze': 'The text to analyze',
-            'api.p.lang.analyze': 'Language code. Default: auto-detect',
+            'api.title': 'API Reference',
+            'api.subtitle': 'All endpoints accept POST with JSON body. Base URL:',
+            'api.humanize.desc': 'Full humanization with 11-stage pipeline',
+            'api.aiDetect.desc': 'AI detection with 12 metrics',
+            'api.analyze.desc': 'Text analysis with statistics & AI detection',
+            'api.tone.desc': 'Analyze text tone (7 levels)',
+            'api.toneAdjust.desc': 'Adjust text tone toward target',
+            'api.coherence.desc': 'Coherence analysis with improvement suggestions',
+            'api.watermark.desc': 'Detect & clean 6 types of watermarks',
+            'api.spin.desc': 'Spin content into unique variants',
+            'api.paraphrase.desc': 'Rule-based syntactic paraphrasing',
+            'api.explain.desc': 'Before/after analysis with recommendations',
+            'api.extract.desc': 'Extract text from file upload or URL',
+            'api.info.desc': 'Service metadata, tools, capabilities',
 
             // Footer
-            'footer.desc': 'Algorithmic text naturalization service',
-            'footer.developed': 'Developed by',
-            'footer.powered': 'Powered by',
-            'footer.engine': 'TextHumanize',
-
-            // Toasts
-            'toast.copied': 'Copied to clipboard!',
-            'toast.copy.fail': 'Failed to copy',
-            'toast.cleared': 'Cleared',
-            'toast.pasted': 'Pasted from clipboard',
-            'toast.paste.fail': 'Cannot access clipboard',
-            'toast.humanized': 'Humanized! {0} changes applied',
-            'toast.analysis': 'Analysis complete',
-            'toast.ai.score': 'AI Score: {0}',
-            'toast.error': 'Error: {0}',
-            'toast.file.loaded': 'File loaded: {0}',
-            'toast.file.error': 'Cannot read file',
-            'toast.url.fetched': 'Text extracted from URL',
-            'toast.url.error': 'Failed to fetch URL',
-            'toast.file.toobig': 'File too large (max 1MB)',
-            'toast.file.type': 'Unsupported file type',
+            'footer.engine': 'Powered by TextHumanize PHP',
         },
-
         ru: {
-            // Header & Nav
-            'nav.tool': 'Инструмент',
-            'nav.pipeline': 'Конвейер',
-            'nav.api': 'API',
-
-            // Hero
-            'hero.badge': 'На базе TextHumanize Engine',
-            'hero.title.1': 'Превратите ',
-            'hero.title.highlight': 'ИИ-текст',
-            'hero.title.2': ' в',
-            'hero.title.3': 'Естественную речь',
-            'hero.subtitle': 'Алгоритмическая натурализация текста — нормализация типографики, упрощение канцелярского языка, разнообразие структуры предложений, повышение вариативности. <strong>9 языков</strong>, без внешних API-вызовов.',
-            'hero.stat.stages': 'Этапов обработки',
-            'hero.stat.languages': 'Языков',
-            'hero.stat.delay': 'Задержка сети',
-
-            // Controls
-            'ctrl.language': 'Язык',
-
-            // Input Source
-            'source.text': 'Текст',
-            'source.file': 'Файл',
-            'source.url': 'Ссылка',
-
-            // Editor
-            'editor.original': 'Исходный текст',
-            'editor.result': 'Результат',
-            'editor.placeholder': 'Вставьте сгенерированный ИИ текст сюда...\n\nПример: Более того, важно отметить, что внедрение облачных вычислений способствует оптимизации бизнес-процессов.',
-            'editor.result.placeholder': 'Здесь появится обработанный текст',
-            'editor.paste': 'Вставить из буфера',
-            'editor.clear': 'Очистить',
-            'editor.copy': 'Скопировать результат',
-            'editor.diff': 'Показать различия',
-
-            // File Upload
-            'file.drop': 'Перетащите файл или нажмите для выбора',
-            'file.formats': 'Поддерживаются: TXT, HTML, MD',
-            'file.choose': 'Выбрать файл',
-
-            // URL Input
-            'url.placeholder': 'Введите URL для извлечения текста...',
-            'url.fetch': 'Загрузить',
-
-            // Action Buttons
-            'btn.humanize': 'Гуманизировать',
-            'btn.processing': 'Обработка...',
-            'btn.analyze': 'Только анализ',
-            'btn.detect': 'Детектор ИИ',
-            'btn.shortcut': '⌘+Enter для обработки',
-
-            // Check Types
-            'check.type': 'Тип проверки',
-            'check.comprehensive': 'Комплексная',
-            'check.ai': 'Детекция ИИ',
-            'check.readability': 'Читаемость',
-            'check.style': 'Качество стиля',
-
-            // Stats
-            'stats.chars': 'симв.',
-            'stats.words': 'слов',
-            'stats.sent': 'предл.',
-            'stats.para': 'абз.',
-            'stats.read': 'чтение',
-
-            // AI Detection
-            'ai.title': 'Анализ ИИ-детекции',
-            'ai.score': 'ИИ оценка',
-            'ai.human.written': '✅ Написано человеком',
-            'ai.likely.human': '🟢 Вероятно человек',
-            'ai.mixed': '🟡 Смешанный / Редактированный',
-            'ai.possibly.ai': '🟠 Возможно ИИ',
-            'ai.likely.ai': '🔴 Вероятно ИИ',
-            'ai.generated': '⛔ Сгенерировано ИИ',
-
-            // Metrics
-            'metrics.title': 'Панель аналитики',
-            'metrics.artificiality': 'Индекс искусственности',
-            'metrics.sentlen': 'Средняя длина предложения',
-            'metrics.bureau': 'Канцеляризмы',
-            'metrics.burst': 'Вариативность',
-            'metrics.connector': 'Коэффициент связок',
-            'metrics.repetition': 'Оценка повторов',
-            'metrics.before': 'До',
-            'metrics.after': 'После',
-
-            // Readability Panel
-            'readability.title': 'Анализ читаемости',
-            'readability.grade': 'Уровень чтения',
-            'readability.avgword': 'Средняя длина слова',
-            'readability.avgsentence': 'Средняя длина предложения',
-            'readability.unique': 'Богатство словаря',
-            'readability.readtime': 'Время чтения',
-
-            // Style Panel
-            'style.title': 'Качество стиля',
-            'style.diversity': 'Разнообразие словаря',
-            'style.burstiness': 'Вариация предложений',
-            'style.formality': 'Уровень формальности',
-            'style.connectors': 'Использование связок',
-
-            // Changes
-            'changes.title': 'Детальные изменения',
-
-            // Pipeline
-            'pipeline.title': '10-этапный конвейер обработки',
-            'pipeline.subtitle': 'Каждый текст проходит через серию тщательно выверенных трансформаций',
-            'pipe.1.title': 'Сегментация',
-            'pipe.1.desc': 'Защита блоков кода, URL, email, брендов',
-            'pipe.2.title': 'Типографика',
-            'pipe.2.desc': 'Нормализация тире, кавычек, многоточий',
-            'pipe.3.title': 'Дебюрократизация',
-            'pipe.3.desc': 'Замена канцелярских/формальных слов',
-            'pipe.4.title': 'Структура',
-            'pipe.4.desc': 'Разнообразие начал и структуры предложений',
-            'pipe.5.title': 'Повторы',
-            'pipe.5.desc': 'Сокращение повторов слов/фраз синонимами',
-            'pipe.6.title': 'Живость',
-            'pipe.6.desc': 'Вставка естественных оборотов, разговорных фраз',
-            'pipe.7.title': 'Универсальный',
-            'pipe.7.desc': 'Статистическая обработка для ВСЕХ языков',
-            'pipe.8.title': 'Натурализация',
-            'pipe.8.desc': 'Стилевая натурализация: вариативность и перплексия',
-            'pipe.9.title': 'Валидация',
-            'pipe.9.desc': 'Проверка качества, откат при необходимости',
-            'pipe.10.title': 'Восстановление',
-            'pipe.10.desc': 'Восстановление защищённых сегментов',
-
-            // Features
-            'features.title': 'Ключевые возможности',
-            'feat.fast.title': 'Молниеносная скорость',
-            'feat.fast.desc': 'Чисто алгоритмическая обработка. Без внешних API. Мгновенный результат.',
-            'feat.private.title': '100% приватность',
-            'feat.private.desc': 'Вся обработка на сервере. Ваши данные никуда не уходят.',
-            'feat.upload.title': 'Загрузка файлов и URL',
-            'feat.upload.desc': 'Извлечение текста из файлов и веб-страниц. Поддержка TXT, HTML, MD и других форматов.',
-            'feat.lang.title': '9+ языков',
-            'feat.lang.desc': 'Полная поддержка словарей для 9 языков и универсальный процессор для остальных.',
-            'feat.ai.title': 'Детектор ИИ',
-            'feat.ai.desc': 'Встроенный эвристический детектор ИИ с детальным анализом факторов.',
-            'feat.metrics.title': 'Метрики читаемости',
-            'feat.metrics.desc': 'Вариативность, искусственность, канцеляризмы, анализ связок — всё встроено.',
-
-            // AI Factor translations
-            'factor.artificiality': 'Искусственность',
-            'factor.bureaucratic': 'Канцелярский язык',
-            'factor.connector': 'Плотность связок',
-            'factor.uniformity': 'Однородность предложений',
-            'factor.diversity': 'Разнообразие словаря',
-            'factor.repetition': 'Уровень повторов',
-
-            // Modal
-            'modal.title': 'Гуманизация завершена',
-
-            // Branding
             'brand.by': 'от <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
-
-            // API
-            'api.title': 'REST API',
-            'api.subtitle': 'Интегрируйте HumanizeKit в свой рабочий процесс',
-            'api.humanize.desc': 'Преобразование текста в более естественный',
-            'api.analyze.desc': 'Анализ метрик текста и детекция ИИ-паттернов',
-            'api.info.desc': 'Метаданные сервиса и поддерживаемые опции',
-            'api.extract.desc': 'Извлечение текста из файлов или URL-адресов',
-            'api.params': 'Параметры',
-            'api.param': 'Параметр',
-            'api.type': 'Тип',
-            'api.required': 'Обязательный',
-            'api.description': 'Описание',
-            'api.request': 'Запрос',
-            'api.response': 'Ответ',
-            'api.p.text': 'Текст для гуманизации',
-            'api.p.lang': 'Код языка (auto, ru, uk, en, de, fr, es, pl, pt, it). По умолчанию: автоопределение',
-            'api.p.profile': 'Профиль обработки: chat, web, seo, docs, formal. По умолчанию: web',
-            'api.p.intensity': 'Интенсивность обработки 0-100. По умолчанию: 60',
-            'api.p.keywords': 'Слова/фразы для сохранения без изменений',
-            'api.p.text.analyze': 'Текст для анализа',
-            'api.p.lang.analyze': 'Код языка. По умолчанию: автоопределение',
-
-            // Footer
-            'footer.desc': 'Сервис алгоритмической натурализации текста',
-            'footer.developed': 'Разработано',
-            'footer.powered': 'Работает на',
-            'footer.engine': 'TextHumanize',
-
-            // Toasts
-            'toast.copied': 'Скопировано в буфер!',
-            'toast.copy.fail': 'Не удалось скопировать',
-            'toast.cleared': 'Очищено',
-            'toast.pasted': 'Вставлено из буфера',
-            'toast.paste.fail': 'Нет доступа к буферу обмена',
-            'toast.humanized': 'Гуманизировано! {0} изменений применено',
-            'toast.analysis': 'Анализ завершён',
-            'toast.ai.score': 'ИИ оценка: {0}',
-            'toast.error': 'Ошибка: {0}',
-            'toast.file.loaded': 'Файл загружен: {0}',
-            'toast.file.error': 'Не удалось прочитать файл',
-            'toast.url.fetched': 'Текст извлечён из URL',
-            'toast.url.error': 'Не удалось загрузить URL',
-            'toast.file.toobig': 'Файл слишком большой (макс 1МБ)',
-            'toast.file.type': 'Неподдерживаемый тип файла',
-        },
-
-        uk: {
-            // Header & Nav
-            'nav.tool': 'Інструмент',
-            'nav.pipeline': 'Конвеєр',
+            'nav.tools': 'Инструменты',
             'nav.api': 'API',
-
-            // Hero
-            'hero.badge': 'На базі TextHumanize Engine',
-            'hero.title.1': 'Перетворіть ',
-            'hero.title.highlight': 'ШІ-текст',
-            'hero.title.2': ' на',
-            'hero.title.3': 'Природне людське мовлення',
-            'hero.subtitle': 'Алгоритмічна натуралізація тексту — нормалізація типографіки, спрощення канцелярської мови, урізноманітнення структури речень, підвищення варіативності. <strong>9 мов</strong>, без зовнішніх API-викликів.',
-            'hero.stat.stages': 'Етапів обробки',
-            'hero.stat.languages': 'Мов',
-            'hero.stat.delay': 'Затримка мережі',
-
-            // Controls
-            'ctrl.language': 'Мова',
-
-            // Input Source
-            'source.text': 'Текст',
-            'source.file': 'Файл',
-            'source.url': 'Посилання',
-
-            // Editor
-            'editor.original': 'Вихідний текст',
-            'editor.result': 'Результат',
-            'editor.placeholder': 'Вставте згенерований ШІ текст сюди...\n\nПриклад: Більш того, важливо зазначити, що впровадження хмарних обчислень сприяє оптимізації бізнес-процесів.',
-            'editor.result.placeholder': 'Тут з\'явиться оброблений текст',
-            'editor.paste': 'Вставити з буферу',
-            'editor.clear': 'Очистити',
-            'editor.copy': 'Скопіювати результат',
-            'editor.diff': 'Показати відмінності',
-
-            // File Upload
-            'file.drop': 'Перетягніть файл або натисніть для вибору',
-            'file.formats': 'Підтримуються: TXT, HTML, MD',
-            'file.choose': 'Обрати файл',
-
-            // URL Input
-            'url.placeholder': 'Введіть URL для вилучення тексту...',
-            'url.fetch': 'Завантажити',
-
-            // Action Buttons
-            'btn.humanize': 'Гуманізувати',
-            'btn.processing': 'Обробка...',
-            'btn.analyze': 'Тільки аналіз',
-            'btn.detect': 'Детектор ШІ',
-            'btn.shortcut': '⌘+Enter для обробки',
-
-            // Check Types
-            'check.type': 'Тип перевірки',
-            'check.comprehensive': 'Комплексна',
-            'check.ai': 'Детекція ШІ',
-            'check.readability': 'Читабельність',
-            'check.style': 'Якість стилю',
-
-            // Stats
-            'stats.chars': 'симв.',
-            'stats.words': 'слів',
-            'stats.sent': 'реч.',
-            'stats.para': 'абз.',
-            'stats.read': 'читання',
-
-            // AI Detection
-            'ai.title': 'Аналіз ШІ-детекції',
-            'ai.score': 'ШІ оцінка',
-            'ai.human.written': '✅ Написано людиною',
-            'ai.likely.human': '🟢 Ймовірно людина',
-            'ai.mixed': '🟡 Змішаний / Редагований',
-            'ai.possibly.ai': '🟠 Можливо ШІ',
-            'ai.likely.ai': '🔴 Ймовірно ШІ',
-            'ai.generated': '⛔ Згенеровано ШІ',
-
-            // Metrics
-            'metrics.title': 'Панель аналітики',
-            'metrics.artificiality': 'Індекс штучності',
-            'metrics.sentlen': 'Середня довжина речення',
-            'metrics.bureau': 'Канцеляризми',
-            'metrics.burst': 'Варіативність',
-            'metrics.connector': 'Коефіцієнт зв\'язок',
-            'metrics.repetition': 'Оцінка повторів',
-            'metrics.before': 'До',
-            'metrics.after': 'Після',
-
-            // Readability Panel
-            'readability.title': 'Аналіз читабельності',
-            'readability.grade': 'Рівень читання',
-            'readability.avgword': 'Середня довжина слова',
-            'readability.avgsentence': 'Середня довжина речення',
-            'readability.unique': 'Багатство словника',
-            'readability.readtime': 'Час читання',
-
-            // Style Panel
-            'style.title': 'Якість стилю',
-            'style.diversity': 'Різноманітність словника',
-            'style.burstiness': 'Варіація речень',
-            'style.formality': 'Рівень формальності',
-            'style.connectors': 'Використання зв\'язок',
-
-            // Changes
-            'changes.title': 'Детальні зміни',
-
-            // Pipeline
-            'pipeline.title': '10-етапний конвеєр обробки',
-            'pipeline.subtitle': 'Кожен текст проходить через серію ретельно вивірених трансформацій',
-            'pipe.1.title': 'Сегментація',
-            'pipe.1.desc': 'Захист блоків коду, URL, email, брендів',
-            'pipe.2.title': 'Типографіка',
-            'pipe.2.desc': 'Нормалізація тире, лапок, трикрапок',
-            'pipe.3.title': 'Дебюрократизація',
-            'pipe.3.desc': 'Заміна канцелярських/формальних слів',
-            'pipe.4.title': 'Структура',
-            'pipe.4.desc': 'Урізноманітнення початків та структури речень',
-            'pipe.5.title': 'Повтори',
-            'pipe.5.desc': 'Зменшення повторів слів/фраз синонімами',
-            'pipe.6.title': 'Жвавість',
-            'pipe.6.desc': 'Додавання природних зворотів, розмовних фраз',
-            'pipe.7.title': 'Універсальний',
-            'pipe.7.desc': 'Статистична обробка для ВСІХ мов',
-            'pipe.8.title': 'Натуралізація',
-            'pipe.8.desc': 'Стильова натуралізація: варіативність та перплексія',
-            'pipe.9.title': 'Валідація',
-            'pipe.9.desc': 'Перевірка якості, відкат за потреби',
-            'pipe.10.title': 'Відновлення',
-            'pipe.10.desc': 'Відновлення захищених сегментів',
-
-            // Features
-            'features.title': 'Ключові можливості',
-            'feat.fast.title': 'Блискавична швидкість',
-            'feat.fast.desc': 'Чисто алгоритмічна обробка. Без зовнішніх API. Миттєвий результат.',
-            'feat.private.title': '100% приватність',
-            'feat.private.desc': 'Вся обробка на сервері. Ваші дані нікуди не йдуть.',
-            'feat.upload.title': 'Завантаження файлів та URL',
-            'feat.upload.desc': 'Витяг тексту з файлів і веб-сторінок. Підтримка TXT, HTML, MD та інших форматів.',
-            'feat.lang.title': '9+ мов',
-            'feat.lang.desc': 'Повна підтримка словників для 9 мов та універсальний процесор для решти.',
-            'feat.ai.title': 'Детектор ШІ',
-            'feat.ai.desc': 'Вбудований евристичний детектор ШІ з детальним аналізом факторів.',
-            'feat.metrics.title': 'Метрики читабельності',
-            'feat.metrics.desc': 'Варіативність, штучність, канцеляризми, аналіз зв\'язок — все вбудовано.',
-
-            // AI Factor translations
-            'factor.artificiality': 'Штучність',
-            'factor.bureaucratic': 'Канцелярська мова',
-            'factor.connector': 'Щільність зв\'язок',
-            'factor.uniformity': 'Однорідність речень',
-            'factor.diversity': 'Різноманітність словника',
-            'factor.repetition': 'Рівень повторів',
-
-            // Modal
-            'modal.title': 'Гуманізація завершена',
-
-            // Branding
+            'hero.release': 'Релиз',
+            'hero.title': 'AI Текстовый Тулкит',
+            'hero.subtitle': '10 профессиональных инструментов для анализа, гуманизации и защиты текста. На базе TextHumanize PHP — без AI API, чистая алгоритмическая обработка.',
+            'tool.humanize.name': 'Гуманизация',
+            'tool.humanize.desc': 'Полный пайплайн из 11 этапов',
+            'tool.aiDetect.name': 'AI Детектор',
+            'tool.aiDetect.desc': 'Анализ по 12 метрикам',
+            'tool.analyze.name': 'Анализ текста',
+            'tool.analyze.desc': 'Статистика и AI детекция',
+            'tool.tone.name': 'Анализ тона',
+            'tool.tone.desc': '7 уровней тональности',
+            'tool.toneAdjust.name': 'Настройка тона',
+            'tool.toneAdjust.desc': 'Изменить тональность',
+            'tool.coherence.name': 'Когерентность',
+            'tool.coherence.desc': 'Анализ связности текста',
+            'tool.watermark.name': 'Детектор ватермарок',
+            'tool.watermark.desc': '6 типов водяных знаков',
+            'tool.spin.name': 'Спиннер контента',
+            'tool.spin.desc': 'Уникальные варианты текста',
+            'tool.paraphrase.name': 'Парафразер',
+            'tool.paraphrase.desc': 'Синтаксические трансформации',
+            'tool.explain.name': 'Объяснение',
+            'tool.explain.desc': 'Анализ до/после',
+            'badge.core': 'Основной',
+            'badge.new': 'Новый',
+            'ws.placeholder': 'Вставьте или введите текст... (Ctrl+Enter для запуска)',
+            'stat.chars': 'символов',
+            'stat.words': 'слов',
+            'stat.sentences': 'предложений',
+            'stat.paragraphs': 'абзацев',
+            'stat.uniqueRatio': 'Уникальность',
+            'stat.readingTime': 'Время чтения',
+            'ctrl.lang': 'Язык',
+            'ctrl.profile': 'Профиль',
+            'ctrl.intensity': 'Интенсивность',
+            'ctrl.target': 'Целевой тон',
+            'ctrl.variants': 'Варианты',
+            'ctrl.action': 'Действие',
+            'ctrl.suggest': 'Предложения',
+            'ctrl.seed': 'Сид',
+            'lang.auto': 'Авто-определение',
+            'profile.chat': 'Чат',
+            'profile.web': 'Веб',
+            'profile.seo': 'SEO',
+            'profile.docs': 'Документы',
+            'profile.formal': 'Формальный',
+            'tone.formal': 'Формальный',
+            'tone.academic': 'Академический',
+            'tone.professional': 'Профессиональный',
+            'tone.neutral': 'Нейтральный',
+            'tone.friendly': 'Дружелюбный',
+            'tone.casual': 'Разговорный',
+            'tone.marketing': 'Маркетинговый',
+            'wm.detect': 'Обнаружить',
+            'wm.clean': 'Очистить',
+            'wm.found': 'Ватермарки обнаружены',
+            'wm.notFound': 'Ватермарки не найдены',
+            'wm.cleaned': 'Ватермарки очищены',
+            'wm.types': 'Обнаруженные типы',
+            'wm.cleanedVersion': 'Очищенная версия',
+            'btn.run': 'Запустить',
+            'btn.extract': 'Извлечь',
+            'result.title': 'Результат',
+            'result.scores': 'Детальные оценки',
+            'result.stats': 'Статистика текста',
+            'result.issues': 'Найденные проблемы',
+            'result.suggestions': 'Предложения по улучшению',
+            'result.changes': 'Внесённые изменения',
+            'result.original': 'Оригинал',
+            'result.humanized': 'Гуманизированный',
+            'result.recommendations': 'Рекомендации',
+            'metric.changeRatio': 'Коэффициент изменений',
+            'metric.lang': 'Определённый язык',
+            'diff.removed': 'Удалено',
+            'diff.added': 'Добавлено',
+            'diff.removedTip': 'Удалено',
+            'diff.addedTip': 'Вставлено',
+            'diff.replacedWithTip': 'Заменено на',
+            'diff.replacedFromTip': 'Было',
+            'diff.resultLabel': 'Результат',
+            'diff.detailsTitle': 'Подробные изменения',
+            'diff.colBefore': 'Было',
+            'diff.colAfter': 'Стало',
+            'diff.colType': 'Тип',
+            'diff.type_replace': 'Замена',
+            'diff.type_delete': 'Удаление',
+            'diff.type_insert': 'Вставка',
+            'metric.aiBefore': 'AI оценка до',
+            'metric.aiAfter': 'AI оценка после',
+            'metric.confidence': 'Уверенность',
+            'metric.humanProb': 'Вероятность человека',
+            'metric.artificiality': 'Искусственность',
+            'metric.avgSentLen': 'Средняя длина предл.',
+            'metric.bureaucratic': 'Канцеляризмы',
+            'metric.connectors': 'Связки',
+            'metric.repetition': 'Повторения',
+            'metric.burstiness': 'Вариативность',
+            'metric.primaryTone': 'Основной тон',
+            'metric.formality': 'Формальность',
+            'metric.subjectivity': 'Субъективность',
+            'metric.targetTone': 'Целевой тон',
+            'metric.intensity': 'Интенсивность',
+            'metric.overall': 'Общая оценка',
+            'metric.lexicalCohesion': 'Лексическая связность',
+            'metric.transitions': 'Переходы',
+            'metric.topicConsistency': 'Тематическая связность',
+            'metric.openingDiversity': 'Разнообразие начал',
+            'metric.uniqueness': 'Уникальность',
+            'metric.variants': 'Вариантов',
+            'modal.url.title': 'Извлечь из URL',
+            'toast.extracted': 'Текст успешно извлечён',
+            'toast.copied': 'Скопировано в буфер обмена',
+            'api.title': 'API Документация',
+            'api.subtitle': 'Все эндпоинты принимают POST с JSON. Базовый URL:',
+            'api.humanize.desc': 'Полная гуманизация с 11-этапным пайплайном',
+            'api.aiDetect.desc': 'AI детекция по 12 метрикам',
+            'api.analyze.desc': 'Анализ текста со статистикой и AI детекцией',
+            'api.tone.desc': 'Анализ тональности (7 уровней)',
+            'api.toneAdjust.desc': 'Настройка тональности к цели',
+            'api.coherence.desc': 'Анализ когерентности с рекомендациями',
+            'api.watermark.desc': 'Обнаружение и очистка 6 типов ватермарок',
+            'api.spin.desc': 'Создание уникальных вариантов текста',
+            'api.paraphrase.desc': 'Синтаксическое перефразирование',
+            'api.explain.desc': 'Анализ до/после с рекомендациями',
+            'api.extract.desc': 'Извлечение текста из файла или URL',
+            'api.info.desc': 'Метаданные сервиса, инструменты, возможности',
+            'footer.engine': 'На базе TextHumanize PHP',
+        },
+        uk: {
             'brand.by': 'від <a href="https://buyreadysite.com" target="_blank">BuyReadySite.com</a>',
-
-            // API
-            'api.title': 'REST API',
-            'api.subtitle': 'Інтегруйте HumanizeKit у свій робочий процес',
-            'api.humanize.desc': 'Перетворення тексту на більш природний',
-            'api.analyze.desc': 'Аналіз метрик тексту та детекція ШІ-паттернів',
-            'api.info.desc': 'Метадані сервісу та підтримувані опції',
-            'api.extract.desc': 'Витяг тексту з файлів або URL-адрес',
-            'api.params': 'Параметри',
-            'api.param': 'Параметр',
-            'api.type': 'Тип',
-            'api.required': 'Обов\'язковий',
-            'api.description': 'Опис',
-            'api.request': 'Запит',
-            'api.response': 'Відповідь',
-            'api.p.text': 'Текст для гуманізації',
-            'api.p.lang': 'Код мови (auto, ru, uk, en, de, fr, es, pl, pt, it). За замовчуванням: автовизначення',
-            'api.p.profile': 'Профіль обробки: chat, web, seo, docs, formal. За замовчуванням: web',
-            'api.p.intensity': 'Інтенсивність обробки 0-100. За замовчуванням: 60',
-            'api.p.keywords': 'Слова/фрази для збереження без змін',
-            'api.p.text.analyze': 'Текст для аналізу',
-            'api.p.lang.analyze': 'Код мови. За замовчуванням: автовизначення',
-
-            // Footer
-            'footer.desc': 'Сервіс алгоритмічної натуралізації тексту',
-            'footer.developed': 'Розроблено',
-            'footer.powered': 'Працює на',
-            'footer.engine': 'TextHumanize',
-
-            // Toasts
-            'toast.copied': 'Скопійовано до буферу!',
-            'toast.copy.fail': 'Не вдалося скопіювати',
-            'toast.cleared': 'Очищено',
-            'toast.pasted': 'Вставлено з буферу',
-            'toast.paste.fail': 'Немає доступу до буферу обміну',
-            'toast.humanized': 'Гуманізовано! {0} змін застосовано',
-            'toast.analysis': 'Аналіз завершено',
-            'toast.ai.score': 'ШІ оцінка: {0}',
-            'toast.error': 'Помилка: {0}',
-            'toast.file.loaded': 'Файл завантажено: {0}',
-            'toast.file.error': 'Не вдалося прочитати файл',
-            'toast.url.fetched': 'Текст вилучено з URL',
-            'toast.url.error': 'Не вдалося завантажити URL',
-            'toast.file.toobig': 'Файл завеликий (макс 1МБ)',
-            'toast.file.type': 'Непідтримуваний тип файлу',
+            'nav.tools': 'Інструменти',
+            'nav.api': 'API',
+            'hero.release': 'Реліз',
+            'hero.title': 'AI Текстовий Тулкіт',
+            'hero.subtitle': '10 професійних інструментів для аналізу, гуманізації та захисту тексту. На базі TextHumanize PHP — без AI API, чиста алгоритмічна обробка.',
+            'tool.humanize.name': 'Гуманізація',
+            'tool.humanize.desc': 'Повний пайплайн з 11 етапів',
+            'tool.aiDetect.name': 'AI Детектор',
+            'tool.aiDetect.desc': 'Аналіз за 12 метриками',
+            'tool.analyze.name': 'Аналіз тексту',
+            'tool.analyze.desc': 'Статистика та AI детекція',
+            'tool.tone.name': 'Аналіз тону',
+            'tool.tone.desc': '7 рівнів тональності',
+            'tool.toneAdjust.name': 'Налаштування тону',
+            'tool.toneAdjust.desc': 'Змінити тональність',
+            'tool.coherence.name': 'Когерентність',
+            'tool.coherence.desc': "Аналіз зв'язності тексту",
+            'tool.watermark.name': 'Детектор ватермарок',
+            'tool.watermark.desc': '6 типів водяних знаків',
+            'tool.spin.name': 'Спіннер контенту',
+            'tool.spin.desc': 'Унікальні варіанти тексту',
+            'tool.paraphrase.name': 'Парафразер',
+            'tool.paraphrase.desc': 'Синтаксичні трансформації',
+            'tool.explain.name': 'Пояснення',
+            'tool.explain.desc': 'Аналіз до/після',
+            'badge.core': 'Основний',
+            'badge.new': 'Новий',
+            'ws.placeholder': 'Вставте або введіть текст... (Ctrl+Enter для запуску)',
+            'stat.chars': 'символів',
+            'stat.words': 'слів',
+            'stat.sentences': 'речень',
+            'stat.paragraphs': 'абзаців',
+            'stat.uniqueRatio': 'Унікальність',
+            'stat.readingTime': 'Час читання',
+            'ctrl.lang': 'Мова',
+            'ctrl.profile': 'Профіль',
+            'ctrl.intensity': 'Інтенсивність',
+            'ctrl.target': 'Цільовий тон',
+            'ctrl.variants': 'Варіанти',
+            'ctrl.action': 'Дія',
+            'ctrl.suggest': 'Пропозиції',
+            'ctrl.seed': 'Сід',
+            'lang.auto': 'Авто-визначення',
+            'profile.chat': 'Чат',
+            'profile.web': 'Веб',
+            'profile.seo': 'SEO',
+            'profile.docs': 'Документи',
+            'profile.formal': 'Формальний',
+            'tone.formal': 'Формальний',
+            'tone.academic': 'Академічний',
+            'tone.professional': 'Професійний',
+            'tone.neutral': 'Нейтральний',
+            'tone.friendly': 'Дружній',
+            'tone.casual': 'Розмовний',
+            'tone.marketing': 'Маркетинговий',
+            'wm.detect': 'Виявити',
+            'wm.clean': 'Очистити',
+            'wm.found': 'Ватермарки виявлено',
+            'wm.notFound': 'Ватермарки не знайдено',
+            'wm.cleaned': 'Ватермарки очищено',
+            'wm.types': 'Виявлені типи',
+            'wm.cleanedVersion': 'Очищена версія',
+            'btn.run': 'Запустити',
+            'btn.extract': 'Витягти',
+            'result.title': 'Результат',
+            'result.scores': 'Детальні оцінки',
+            'result.stats': 'Статистика тексту',
+            'result.issues': 'Знайдені проблеми',
+            'result.suggestions': 'Пропозиції щодо покращення',
+            'result.changes': 'Внесені зміни',
+            'result.original': 'Оригінал',
+            'result.humanized': 'Гуманізований',
+            'result.recommendations': 'Рекомендації',
+            'metric.changeRatio': 'Коефіцієнт змін',
+            'metric.lang': 'Визначена мова',
+            'diff.removed': 'Видалено',
+            'diff.added': 'Додано',
+            'diff.removedTip': 'Видалено',
+            'diff.addedTip': 'Вставлено',
+            'diff.replacedWithTip': 'Замінено на',
+            'diff.replacedFromTip': 'Було',
+            'diff.resultLabel': 'Результат',
+            'diff.detailsTitle': 'Детальні зміни',
+            'diff.colBefore': 'Було',
+            'diff.colAfter': 'Стало',
+            'diff.colType': 'Тип',
+            'diff.type_replace': 'Заміна',
+            'diff.type_delete': 'Видалення',
+            'diff.type_insert': 'Вставка',
+            'metric.aiBefore': 'AI оцінка до',
+            'metric.aiAfter': 'AI оцінка після',
+            'metric.confidence': 'Впевненість',
+            'metric.humanProb': 'Ймовірність людини',
+            'metric.artificiality': 'Штучність',
+            'metric.avgSentLen': 'Середня довжина реч.',
+            'metric.bureaucratic': 'Канцеляризми',
+            'metric.connectors': "Зв'язки",
+            'metric.repetition': 'Повторення',
+            'metric.burstiness': 'Варіативність',
+            'metric.primaryTone': 'Основний тон',
+            'metric.formality': 'Формальність',
+            'metric.subjectivity': "Суб'єктивність",
+            'metric.targetTone': 'Цільовий тон',
+            'metric.intensity': 'Інтенсивність',
+            'metric.overall': 'Загальна оцінка',
+            'metric.lexicalCohesion': "Лексична зв'язність",
+            'metric.transitions': 'Переходи',
+            'metric.topicConsistency': "Тематична зв'язність",
+            'metric.openingDiversity': 'Різноманітність початків',
+            'metric.uniqueness': 'Унікальність',
+            'metric.variants': 'Варіантів',
+            'modal.url.title': 'Витягти з URL',
+            'toast.extracted': 'Текст успішно витягнуто',
+            'toast.copied': 'Скопійовано до буферу',
+            'api.title': 'API Документація',
+            'api.subtitle': 'Всі ендпоінти приймають POST з JSON. Базовий URL:',
+            'api.humanize.desc': 'Повна гуманізація з 11-етапним пайплайном',
+            'api.aiDetect.desc': 'AI детекція за 12 метриками',
+            'api.analyze.desc': 'Аналіз тексту зі статистикою та AI детекцією',
+            'api.tone.desc': 'Аналіз тональності (7 рівнів)',
+            'api.toneAdjust.desc': 'Налаштування тональності до цілі',
+            'api.coherence.desc': 'Аналіз когерентності з рекомендаціями',
+            'api.watermark.desc': 'Виявлення та очищення 6 типів ватермарок',
+            'api.spin.desc': 'Створення унікальних варіантів тексту',
+            'api.paraphrase.desc': 'Синтаксичне перефразування',
+            'api.explain.desc': 'Аналіз до/після з рекомендаціями',
+            'api.extract.desc': 'Витягнення тексту з файлу або URL',
+            'api.info.desc': 'Метадані сервісу, інструменти, можливості',
+            'footer.engine': 'На базі TextHumanize PHP',
         }
     };
 
-    let currentLang = 'en';
-
-    function setLang(lang) {
-        if (!translations[lang]) lang = 'en';
-        currentLang = lang;
-        localStorage.setItem('humanizekit-lang', lang);
-        applyTranslations();
-        updateLangSwitcher();
+    function t(key) {
+        return (translations[locale] && translations[locale][key]) || translations.en[key] || key;
     }
 
-    function getLang() {
-        return currentLang;
+    function setLocale(l) {
+        if (translations[l]) locale = l;
     }
 
-    function t(key, ...args) {
-        const dict = translations[currentLang] || translations['en'];
-        let str = dict[key] || translations['en'][key] || key;
-        args.forEach((arg, i) => {
-            str = str.replace(`{${i}}`, arg);
-        });
-        return str;
-    }
+    function getLocale() { return locale; }
 
-    function applyTranslations() {
-        // Apply to all elements with data-i18n attribute
+    function translatePage() {
+        // data-i18n — text content
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            const text = t(key);
-            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                el.placeholder = text;
+            if (el.hasAttribute('data-i18n-html')) {
+                el.innerHTML = t(key);
             } else {
-                // Check if it has data-i18n-html for HTML content
-                if (el.hasAttribute('data-i18n-html')) {
-                    el.innerHTML = text;
-                } else {
-                    el.textContent = text;
-                }
+                el.textContent = t(key);
             }
         });
-
-        // Apply to elements with data-i18n-title (for tooltips)
-        document.querySelectorAll('[data-i18n-title]').forEach(el => {
-            el.title = t(el.getAttribute('data-i18n-title'));
-        });
-
-        // Apply to elements with data-i18n-placeholder
+        // data-i18n-placeholder
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
         });
-
-        // Update document language
-        document.documentElement.lang = currentLang;
     }
 
-    function updateLangSwitcher() {
-        document.querySelectorAll('.lang-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.lang === currentLang);
-        });
-    }
-
-    function initI18n() {
-        const saved = localStorage.getItem('humanizekit-lang');
-        if (saved && translations[saved]) {
-            currentLang = saved;
-        } else {
-            // Try to detect from browser
-            const browserLang = navigator.language.slice(0, 2).toLowerCase();
-            if (translations[browserLang]) {
-                currentLang = browserLang;
-            }
-        }
-        applyTranslations();
-        updateLangSwitcher();
-    }
-
-    // Expose globally
-    window.I18n = {
-        t: t,
-        setLang: setLang,
-        getLang: getLang,
-        init: initI18n,
-        apply: applyTranslations
-    };
+    return { t, setLocale, getLocale, translatePage };
 })();

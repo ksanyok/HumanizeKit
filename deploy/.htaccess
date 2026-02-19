@@ -1,8 +1,21 @@
 RewriteEngine On
 
+# Upload limits
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+php_value max_execution_time 60
+
 # API routes
 RewriteRule ^api/humanize$ api/humanize.php [L,QSA]
 RewriteRule ^api/analyze$ api/analyze.php [L,QSA]
+RewriteRule ^api/ai-detect$ api/ai-detect.php [L,QSA]
+RewriteRule ^api/tone$ api/tone.php [L,QSA]
+RewriteRule ^api/tone-adjust$ api/tone-adjust.php [L,QSA]
+RewriteRule ^api/coherence$ api/coherence.php [L,QSA]
+RewriteRule ^api/watermark$ api/watermark.php [L,QSA]
+RewriteRule ^api/spin$ api/spin.php [L,QSA]
+RewriteRule ^api/paraphrase$ api/paraphrase.php [L,QSA]
+RewriteRule ^api/explain$ api/explain.php [L,QSA]
 RewriteRule ^api/extract$ api/extract.php [L,QSA]
 RewriteRule ^api/info$ api/info.php [L,QSA]
 

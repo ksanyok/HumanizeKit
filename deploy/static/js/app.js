@@ -1,901 +1,926 @@
 /**
- * HumanizeKit — Main Application (Redesigned)
- * Modal-based result display, no profile/intensity controls,
- * AI factor translation, file/URL upload, check types
+ * HumanizeKit v0.8.0 — Toolkit Application
+ * 10 tools, glassmorphism UI, i18n
  */
-(function() {
+(function () {
     'use strict';
 
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => document.querySelectorAll(sel);
+    const API = '';
+    let activeTool = null;
+    let isRunning = false;
 
-    // === DOM Elements ===
-    const inputText = $('#inputText');
-    const humanizeBtn = $('#humanizeBtn');
-    const analyzeOnlyBtn = $('#analyzeOnlyBtn');
-    const detectAiBtn = $('#detectAiBtn');
-    const clearBtn = $('#clearBtn');
-    const pasteBtn = $('#pasteBtn');
-    const themeToggle = $('#themeToggle');
-    const langSelect = $('#langSelect');
-
-    // Analysis panels
-    const metricsDashboard = $('#metricsDashboard');
-    const aiDetectionPanel = $('#aiDetectionPanel');
-    const readabilityPanel = $('#readabilityPanel');
-    const stylePanel = $('#stylePanel');
-    const changesSection = $('#changesSection');
-    const changesToggle = $('#changesToggle');
-    const changesList = $('#changesList');
-
-    // Stats elements
-    const statChars = $('#statChars');
-    const statWords = $('#statWords');
-    const statSentences = $('#statSentences');
-    const statParas = $('#statParas');
-    const statReadTime = $('#statReadTime');
-
-    // File/URL elements
-    const fileDropZone = $('#fileDropZone');
-    const fileInput = $('#fileInput');
-    const fileChooseBtn = $('#fileChooseBtn');
-    const fileName = $('#fileName');
-    const urlInput = $('#urlInput');
-    const fetchUrlBtn = $('#fetchUrlBtn');
-
-    // Source tabs & check type pills
-    const sourceTabs = $$('.source-tab[data-source]');
-    const checkTypePills = $$('.check-pill[data-check]');
-
-    // Modal elements
-    const modalOverlay = $('#resultModal');
-    const modalResultText = $('#modalResultText');
-    const modalChangeBadge = $('#modalChangeBadge');
-    const modalCopyBtn = $('#modalCopyBtn');
-    const modalDiffBtn = $('#modalDiffBtn');
-    const modalCloseBtn = $('#modalCloseBtn');
-    const modalMetrics = $('#modalMetrics');
-    const modalChanges = $('#modalChanges');
-    const modalChangesList = $('#modalChangesList');
-    const modalProcessingTime = $('#modalProcessingTime');
-    const modalDetectedLang = $('#modalDetectedLang');
-
-    // AI factor name → i18n key mapping
-    const FACTOR_KEYS = {
-        'Artificiality': 'factor.artificiality',
-        'Bureaucratic Language': 'factor.bureaucratic',
-        'Connector Density': 'factor.connector',
-        'Sentence Uniformity': 'factor.uniformity',
-        'Vocabulary Diversity': 'factor.diversity',
-        'Repetition Level': 'factor.repetition',
+    // ==================== Tool Registry ====================
+    const TOOLS = {
+        humanize:     { icon: '🪄', endpoint: '/api/humanize' },
+        'ai-detect':  { icon: '🤖', endpoint: '/api/ai-detect' },
+        analyze:      { icon: '📊', endpoint: '/api/analyze' },
+        tone:         { icon: '🎭', endpoint: '/api/tone' },
+        'tone-adjust':{ icon: '🎨', endpoint: '/api/tone-adjust' },
+        coherence:    { icon: '🔗', endpoint: '/api/coherence' },
+        watermark:    { icon: '🔍', endpoint: '/api/watermark' },
+        spin:         { icon: '🔄', endpoint: '/api/spin' },
+        paraphrase:   { icon: '✍️', endpoint: '/api/paraphrase' },
+        explain:      { icon: '📋', endpoint: '/api/explain' },
     };
 
-    // State
-    let currentCheckType = 'comprehensive';
-    let currentSource = 'text';
-    let showDiff = false;
-    let lastResult = null;
-    let isProcessing = false;
+    // ==================== DOM Cache ====================
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
 
-    // === Initialization ===
-    function init() {
-        setupTheme();
-        setupEventListeners();
-        setupAnimatedCounters();
-        fetchServiceInfo();
-        if (window.I18n) window.I18n.init();
-        updateInputStats();
+    const els = {
+        toolGrid:    $('#toolGrid'),
+        wsHeader:    $('#wsHeader'),
+        wsInput:     $('#wsInput'),
+        wsResult:    $('#wsResult'),
+        wsToolIcon:  $('#wsToolIcon'),
+        wsToolName:  $('#wsToolName'),
+        wsClose:     $('#wsClose'),
+        inputText:   $('#inputText'),
+        runBtn:      $('#runBtn'),
+        resultBody:  $('#resultBody'),
+        resultTime:  $('#resultTime'),
+        copyResult:  $('#copyResult'),
+        statChars:   $('#statChars'),
+        statWords:   $('#statWords'),
+        statSentences: $('#statSentences'),
+        ctrlLang:    $('#ctrlLang'),
+        ctrlProfile: $('#ctrlProfile'),
+        ctrlIntensity: $('#ctrlIntensity'),
+        intensityVal:  $('#intensityVal'),
+        ctrlTarget:  $('#ctrlTarget'),
+        ctrlVariants:$('#ctrlVariants'),
+        ctrlWmAction:$('#ctrlWmAction'),
+        ctrlSuggest: $('#ctrlSuggest'),
+        ctrlSeed:    $('#ctrlSeed'),
+        themeToggle: $('#themeToggle'),
+        fileUpload:  $('#fileUpload'),
+        urlExtract:  $('#urlExtract'),
+        urlModal:    $('#urlModal'),
+        urlModalClose: $('#urlModalClose'),
+        urlInput:    $('#urlInput'),
+        urlGo:       $('#urlGo'),
+        toast:       $('#toast'),
+    };
+
+    // ==================== Theme ====================
+    function initTheme() {
+        const saved = localStorage.getItem('hk-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        els.themeToggle.addEventListener('click', () => {
+            const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('hk-theme', t);
+        });
     }
 
-    // === Theme ===
-    function setupTheme() {
-        const saved = localStorage.getItem('humanizekit-theme');
-        if (saved) document.documentElement.setAttribute('data-theme', saved);
+    // ==================== Tool Selection ====================
+    function initToolGrid() {
+        $$('.tool-card').forEach(card => {
+            card.addEventListener('click', () => selectTool(card.dataset.tool));
+        });
+        els.wsClose.addEventListener('click', closeTool);
     }
 
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('humanizekit-theme', next);
-    }
+    function selectTool(toolId) {
+        if (!TOOLS[toolId]) return;
+        activeTool = toolId;
 
-    // === i18n helper ===
-    function t(key, ...args) {
-        if (window.I18n) return window.I18n.t(key, ...args);
-        return key;
-    }
+        // Highlight active card
+        $$('.tool-card').forEach(c => c.classList.toggle('active', c.dataset.tool === toolId));
 
-    // === Event Listeners ===
-    function setupEventListeners() {
-        inputText.addEventListener('input', onInputChange);
+        // Show workspace
+        els.wsHeader.style.display = '';
+        els.wsInput.style.display = '';
+        els.wsResult.style.display = 'none';
 
-        humanizeBtn.addEventListener('click', doHumanize);
-        analyzeOnlyBtn.addEventListener('click', doAnalyzeOnly);
-        detectAiBtn.addEventListener('click', doDetectAi);
-        clearBtn.addEventListener('click', clearAll);
-        pasteBtn.addEventListener('click', pasteClipboard);
-        themeToggle.addEventListener('click', toggleTheme);
+        // Set tool info
+        els.wsToolIcon.textContent = TOOLS[toolId].icon;
+        const nameKey = 'tool.' + toCamel(toolId) + '.name';
+        els.wsToolName.textContent = I18n.t(nameKey) || toolId;
 
-        // Changes toggle
-        if (changesToggle) {
-            changesToggle.addEventListener('click', () => changesSection.classList.toggle('open'));
-        }
-
-        // Source tabs
-        sourceTabs.forEach(tab => {
-            tab.addEventListener('click', () => switchSource(tab.dataset.source));
+        // Show relevant controls
+        $$('.tool-ctrl').forEach(el => {
+            const tools = el.dataset.for.split(' ');
+            el.classList.toggle('visible', tools.includes(toolId));
         });
 
-        // Check type pills
-        checkTypePills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                checkTypePills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                currentCheckType = pill.dataset.check;
-            });
-        });
+        updateRunBtn();
+        els.inputText.focus();
 
-        // File upload
-        if (fileDropZone) {
-            fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('drag-over'); });
-            fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('drag-over'));
-            fileDropZone.addEventListener('drop', (e) => {
-                e.preventDefault(); fileDropZone.classList.remove('drag-over');
-                if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
+        // Scroll to workspace
+        document.getElementById('workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeTool() {
+        activeTool = null;
+        $$('.tool-card').forEach(c => c.classList.remove('active'));
+        els.wsHeader.style.display = 'none';
+        els.wsInput.style.display = 'none';
+        els.wsResult.style.display = 'none';
+    }
+
+    // ==================== Input Stats ====================
+    function updateInputStats() {
+        const t = els.inputText.value;
+        const chars = t.length;
+        const words = t.trim() ? t.trim().split(/\s+/).length : 0;
+        const sentences = t.trim() ? (t.match(/[.!?]+/g) || []).length || (t.trim() ? 1 : 0) : 0;
+
+        els.statChars.innerHTML = `${chars} <span data-i18n="stat.chars">${I18n.t('stat.chars')}</span>`;
+        els.statWords.innerHTML = `${words} <span data-i18n="stat.words">${I18n.t('stat.words')}</span>`;
+        els.statSentences.innerHTML = `${sentences} <span data-i18n="stat.sentences">${I18n.t('stat.sentences')}</span>`;
+        updateRunBtn();
+    }
+
+    function updateRunBtn() {
+        els.runBtn.disabled = !activeTool || !els.inputText.value.trim() || isRunning;
+    }
+
+    // ==================== Run Tool ====================
+    async function runTool() {
+        if (!activeTool || isRunning) return;
+        const text = els.inputText.value.trim();
+        if (!text) return;
+
+        isRunning = true;
+        updateRunBtn();
+        els.runBtn.querySelector('.run-text').style.display = 'none';
+        els.runBtn.querySelector('.run-loader').style.display = '';
+
+        try {
+            const payload = buildPayload(text);
+            const resp = await fetch(API + TOOLS[activeTool].endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
+            const data = await resp.json();
+
+            if (!data.ok) throw new Error(data.error || 'API error');
+            renderResult(data);
+        } catch (err) {
+            showToast('Error: ' + err.message);
+        } finally {
+            isRunning = false;
+            updateRunBtn();
+            els.runBtn.querySelector('.run-text').style.display = '';
+            els.runBtn.querySelector('.run-loader').style.display = 'none';
         }
-        if (fileInput) fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) handleFileUpload(fileInput.files[0]); });
-        if (fileChooseBtn) fileChooseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+    }
 
-        // URL fetch
-        if (fetchUrlBtn) fetchUrlBtn.addEventListener('click', handleUrlFetch);
-        if (urlInput) urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleUrlFetch(); });
+    function buildPayload(text) {
+        const p = { text, lang: els.ctrlLang.value };
 
-        // Language switcher
-        $$('.lang-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (window.I18n) {
-                    window.I18n.setLang(btn.dataset.lang);
-                    updateInputStats();
+        switch (activeTool) {
+            case 'humanize':
+                p.profile = els.ctrlProfile.value;
+                p.intensity = parseFloat(els.ctrlIntensity.value);
+                if (els.ctrlSeed.value) p.seed = parseInt(els.ctrlSeed.value);
+                break;
+            case 'tone-adjust':
+                p.target = els.ctrlTarget.value;
+                p.intensity = parseFloat(els.ctrlIntensity.value);
+                break;
+            case 'spin':
+                p.intensity = parseFloat(els.ctrlIntensity.value);
+                p.count = parseInt(els.ctrlVariants.value);
+                if (els.ctrlSeed.value) p.seed = parseInt(els.ctrlSeed.value);
+                break;
+            case 'paraphrase':
+                p.intensity = parseFloat(els.ctrlIntensity.value);
+                if (els.ctrlSeed.value) p.seed = parseInt(els.ctrlSeed.value);
+                break;
+            case 'coherence':
+                p.suggest = els.ctrlSuggest.checked;
+                break;
+            case 'watermark':
+                p.action = els.ctrlWmAction.value;
+                break;
+            case 'explain':
+                p.profile = els.ctrlProfile.value;
+                p.intensity = parseFloat(els.ctrlIntensity.value);
+                break;
+        }
+        return p;
+    }
+
+    // ==================== Result Rendering ====================
+    function renderResult(data) {
+        els.wsResult.style.display = '';
+        els.resultTime.textContent = data.elapsed_ms ? `${data.elapsed_ms}ms` : '';
+
+        const render = {
+            humanize:     renderHumanize,
+            'ai-detect':  renderAiDetect,
+            analyze:      renderAnalyze,
+            tone:         renderTone,
+            'tone-adjust': renderToneAdjust,
+            coherence:    renderCoherence,
+            watermark:    renderWatermark,
+            spin:         renderSpin,
+            paraphrase:   renderParaphrase,
+            explain:      renderExplain,
+        };
+
+        if (render[activeTool]) {
+            els.resultBody.innerHTML = render[activeTool](data);
+        } else {
+            els.resultBody.innerHTML = `<pre class="result-text">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+        }
+
+        els.wsResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // --- Humanize ---
+    function renderHumanize(d) {
+        const original = d.original || '';
+        const modified = d.text || '';
+        const ops = (original && modified && original !== modified)
+            ? diffWords(tokenize(original), tokenize(modified))
+            : null;
+
+        // ── 1. Clean result (copyable, with subtle markers & tooltips) ──
+        let html = `<div class="hm-result-clean">`;
+        html += `<div class="hm-result-header">`;
+        html += `<span class="hm-result-label">${I18n.t('diff.resultLabel')}</span>`;
+        html += `</div>`;
+        html += `<div class="result-text hm-clean-text">${ops ? buildCleanHtml(ops) : escHtml(modified)}</div>`;
+        html += `</div>`;
+
+        // ── 2. Metrics ──
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.changeRatio'), pct(d.change_ratio), d.change_ratio);
+        if (d.lang) {
+            html += metricCard(I18n.t('metric.lang'), d.lang.toUpperCase(), null);
+        }
+        if (d.metrics_before && d.metrics_before.artificiality_score != null) {
+            html += metricCard(I18n.t('metric.aiBefore'), fmtScore(d.metrics_before.artificiality_score), d.metrics_before.artificiality_score / 100, true);
+        }
+        if (d.metrics_after && d.metrics_after.artificiality_score != null) {
+            html += metricCard(I18n.t('metric.aiAfter'), fmtScore(d.metrics_after.artificiality_score), d.metrics_after.artificiality_score / 100, true);
+        }
+        html += `</div>`;
+
+        // ── 3. Stages applied ──
+        if (d.changes && d.changes.length) {
+            html += `<div class="stages-applied">`;
+            d.changes.forEach(c => {
+                const stage = c.stage || 'unknown';
+                html += `<span class="stage-badge">${escHtml(stage)}</span>`;
+            });
+            html += `</div>`;
+        }
+
+        // ── 4. Expandable detailed diff ──
+        if (ops) {
+            const changeList = collectChanges(ops);
+            if (changeList.length) {
+                html += `<details class="hm-diff-details">`;
+                html += `<summary class="hm-diff-summary">`;
+                html += `<span>${I18n.t('diff.detailsTitle')}</span>`;
+                html += `<span class="hm-diff-count">${changeList.length}</span>`;
+                html += `</summary>`;
+                // Legend
+                html += `<div class="diff-legend">`;
+                html += `<span class="diff-legend-item"><span class="diff-sample diff-del-sample"></span> ${I18n.t('diff.removed')}</span>`;
+                html += `<span class="diff-legend-item"><span class="diff-sample diff-ins-sample"></span> ${I18n.t('diff.added')}</span>`;
+                html += `</div>`;
+                // Full diff text
+                html += `<div class="result-text diff-view">${buildFullDiffHtml(ops)}</div>`;
+                // Change list table
+                html += `<div class="hm-changes-table">`;
+                html += `<div class="hm-changes-header">`;
+                html += `<span>#</span><span>${I18n.t('diff.colBefore')}</span><span>${I18n.t('diff.colAfter')}</span><span>${I18n.t('diff.colType')}</span>`;
+                html += `</div>`;
+                changeList.forEach((c, i) => {
+                    html += `<div class="hm-change-row">`;
+                    html += `<span class="hm-change-num">${i + 1}</span>`;
+                    html += `<span class="hm-change-old">${escHtml(c.old)}</span>`;
+                    html += `<span class="hm-change-new">${escHtml(c.new_)}</span>`;
+                    html += `<span class="hm-change-type hm-type-${c.type}">${I18n.t('diff.type_' + c.type)}</span>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                html += `</details>`;
+            }
+        }
+
+        if (d.explanation) {
+            html += `<div class="result-summary">${escHtml(typeof d.explanation === 'string' ? d.explanation : JSON.stringify(d.explanation))}</div>`;
+        }
+        return html;
+    }
+
+    // ==================== Word-level Diff ====================
+
+    // Clean view: only the NEW text, with subtle markers on changed parts
+    function buildCleanHtml(ops) {
+        let html = '';
+        for (const op of ops) {
+            if (op.type === 'equal') {
+                html += escHtml(op.val);
+            } else if (op.type === 'delete') {
+                // Skip deleted text — don't show in clean view
+            } else if (op.type === 'insert') {
+                html += `<span class="hm-changed" data-tooltip="${escAttr(I18n.t('diff.addedTip'))}">${escHtml(op.val)}</span>`;
+            } else if (op.type === 'replace') {
+                html += `<span class="hm-changed" data-tooltip="${escAttr(I18n.t('diff.replacedFromTip') + ': ' + op.oldVal)}">${escHtml(op.newVal)}</span>`;
+            }
+        }
+        return html;
+    }
+
+    // Full diff view: shows both deletions and insertions
+    function buildFullDiffHtml(ops) {
+        let html = '';
+        for (const op of ops) {
+            if (op.type === 'equal') {
+                html += escHtml(op.val);
+            } else if (op.type === 'delete') {
+                html += `<span class="diff-del">${escHtml(op.val)}</span>`;
+            } else if (op.type === 'insert') {
+                html += `<span class="diff-ins">${escHtml(op.val)}</span>`;
+            } else if (op.type === 'replace') {
+                html += `<span class="diff-del">${escHtml(op.oldVal)}</span>`;
+                html += `<span class="diff-ins">${escHtml(op.newVal)}</span>`;
+            }
+        }
+        return html;
+    }
+
+    // Collect individual changes into a list for the table
+    function collectChanges(ops) {
+        const changes = [];
+        for (const op of ops) {
+            if (op.type === 'delete') {
+                if (op.val.trim()) changes.push({ old: op.val, new_: '—', type: 'delete' });
+            } else if (op.type === 'insert') {
+                if (op.val.trim()) changes.push({ old: '—', new_: op.val, type: 'insert' });
+            } else if (op.type === 'replace') {
+                changes.push({ old: op.oldVal, new_: op.newVal, type: 'replace' });
+            }
+        }
+        return changes;
+    }
+
+    function tokenize(text) {
+        // Split into words and whitespace tokens, preserving everything
+        return text.match(/(\S+|\s+)/g) || [];
+    }
+
+    function diffWords(oldArr, newArr) {
+        // Myers-like simple LCS-based diff
+        const m = oldArr.length, n = newArr.length;
+
+        // For very large texts, fall back to sequential scan
+        if (m * n > 500000) return diffSimple(oldArr, newArr);
+
+        // Build LCS table
+        const dp = Array.from({length: m + 1}, () => new Uint16Array(n + 1));
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                dp[i][j] = oldArr[i-1] === newArr[j-1]
+                    ? dp[i-1][j-1] + 1
+                    : Math.max(dp[i-1][j], dp[i][j-1]);
+            }
+        }
+
+        // Backtrack to build ops
+        const ops = [];
+        let i = m, j = n;
+        const rawOps = [];
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && oldArr[i-1] === newArr[j-1]) {
+                rawOps.push({type: 'equal', val: oldArr[i-1]});
+                i--; j--;
+            } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+                rawOps.push({type: 'insert', val: newArr[j-1]});
+                j--;
+            } else {
+                rawOps.push({type: 'delete', val: oldArr[i-1]});
+                i--;
+            }
+        }
+        rawOps.reverse();
+
+        // Merge adjacent delete+insert into replace
+        return mergeOps(rawOps);
+    }
+
+    function diffSimple(oldArr, newArr) {
+        // Simple sequential diff for large texts
+        const ops = [];
+        let i = 0, j = 0;
+        while (i < oldArr.length && j < newArr.length) {
+            if (oldArr[i] === newArr[j]) {
+                ops.push({type: 'equal', val: oldArr[i]});
+                i++; j++;
+            } else {
+                ops.push({type: 'delete', val: oldArr[i]});
+                ops.push({type: 'insert', val: newArr[j]});
+                i++; j++;
+            }
+        }
+        while (i < oldArr.length) ops.push({type: 'delete', val: oldArr[i++]});
+        while (j < newArr.length) ops.push({type: 'insert', val: newArr[j++]});
+        return mergeOps(ops);
+    }
+
+    function mergeOps(rawOps) {
+        const ops = [];
+        let k = 0;
+        while (k < rawOps.length) {
+            if (rawOps[k].type === 'delete' && k+1 < rawOps.length && rawOps[k+1].type === 'insert') {
+                ops.push({type: 'replace', oldVal: rawOps[k].val, newVal: rawOps[k+1].val});
+                k += 2;
+            } else {
+                ops.push(rawOps[k]);
+                k++;
+            }
+        }
+        return ops;
+    }
+
+    function escAttr(s) {
+        return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // --- AI Detect ---
+    function renderAiDetect(d) {
+        const prob = d.ai_probability;
+        const circ = 339.292; // 2*PI*54
+        const offset = circ * (1 - prob);
+        const probColor = prob > 0.7 ? 'var(--danger)' : prob > 0.4 ? 'var(--warning)' : 'var(--success)';
+        const verdictClass = prob > 0.7 ? 'verdict-ai' : prob > 0.4 ? 'verdict-mixed' : 'verdict-human';
+
+        let html = `<div style="text-align:center">`;
+        html += `<div class="prob-wheel">
+            <svg viewBox="0 0 120 120">
+                <circle class="prob-wheel-bg" cx="60" cy="60" r="54" />
+                <circle class="prob-wheel-fill" cx="60" cy="60" r="54"
+                    stroke="${probColor}"
+                    stroke-dasharray="${circ}"
+                    stroke-dashoffset="${offset}" />
+            </svg>
+            <div class="prob-label">
+                <span style="color:${probColor}">${pct(prob)}</span>
+                <span class="prob-sub">AI</span>
+            </div>
+        </div>`;
+        html += `<div class="verdict-badge ${verdictClass}">${escHtml(d.verdict)}</div>`;
+        html += `</div>`;
+
+        // Confidence
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.confidence'), pct(d.confidence), d.confidence);
+        html += metricCard(I18n.t('metric.humanProb'), pct(d.human_probability), d.human_probability);
+        html += `</div>`;
+
+        // 12 individual scores
+        if (d.scores) {
+            html += `<h4 style="margin-top:16px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.scores')}</h4>`;
+            html += `<div class="scores-grid">`;
+            for (const [name, val] of Object.entries(d.scores)) {
+                const color = val > 0.7 ? 'var(--danger)' : val > 0.4 ? 'var(--warning)' : 'var(--success)';
+                html += `<div class="score-item">
+                    <span class="score-name">${name.replace(/_/g, ' ')}</span>
+                    <div class="score-bar"><div class="score-bar-fill" style="width:${val*100}%;background:${color}"></div></div>
+                    <span class="score-val" style="color:${color}">${(val*100).toFixed(0)}%</span>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Summary
+        if (d.summary) {
+            html += `<div class="result-summary">${escHtml(d.summary)}</div>`;
+        }
+
+        // Explanations
+        if (d.explanations && d.explanations.length) {
+            html += `<div class="issues-list">`;
+            d.explanations.forEach(e => {
+                html += `<div class="issue-item">💡 ${escHtml(e)}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        return html;
+    }
+
+    // --- Analyze ---
+    function renderAnalyze(d) {
+        let html = `<div class="result-metrics">`;
+        if (d.lang) {
+            html += metricCard(I18n.t('metric.lang'), d.lang.toUpperCase(), null);
+        }
+        html += metricCard(I18n.t('metric.artificiality'), fmtScore(d.artificiality_score), d.artificiality_score / 100, true);
+        html += metricCard(I18n.t('metric.avgSentLen'), d.avg_sentence_length.toFixed(1), null);
+        html += metricCard(I18n.t('metric.bureaucratic'), pct(d.bureaucratic_ratio), d.bureaucratic_ratio, true);
+        html += metricCard(I18n.t('metric.connectors'), pct(d.connector_ratio), d.connector_ratio, true);
+        html += metricCard(I18n.t('metric.repetition'), pct(d.repetition_score), d.repetition_score, true);
+        html += metricCard(I18n.t('metric.burstiness'), pct(d.burstiness_score), d.burstiness_score);
+        html += `</div>`;
+
+        // Stats
+        if (d.stats) {
+            html += `<h4 style="margin-top:16px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.stats')}</h4>`;
+            html += `<div class="result-metrics">`;
+            html += metricCard(I18n.t('stat.words'), d.stats.words);
+            html += metricCard(I18n.t('stat.sentences'), d.stats.sentences);
+            html += metricCard(I18n.t('stat.paragraphs'), d.stats.paragraphs);
+            html += metricCard(I18n.t('stat.chars'), d.stats.characters);
+            html += metricCard(I18n.t('stat.uniqueRatio'), pct(d.stats.unique_ratio), d.stats.unique_ratio);
+            html += metricCard(I18n.t('stat.readingTime'), `${d.stats.reading_time_sec}s`);
+            html += `</div>`;
+        }
+
+        // AI Detection
+        if (d.ai_detection) {
+            html += renderAiDetect(d.ai_detection);
+        }
+
+        return html;
+    }
+
+    // --- Tone ---
+    function renderTone(d) {
+        const toneColors = {
+            formal: '#6366f1', academic: '#8b5cf6', professional: '#3b82f6',
+            neutral: '#64748b', friendly: '#f59e0b', casual: '#10b981', marketing: '#ec4899'
+        };
+
+        let html = `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.primaryTone'), d.primary_tone, null);
+        html += metricCard(I18n.t('metric.formality'), pct(d.formality), d.formality);
+        html += metricCard(I18n.t('metric.subjectivity'), pct(d.subjectivity), d.subjectivity);
+        html += metricCard(I18n.t('metric.confidence'), pct(d.confidence), d.confidence);
+        html += `</div>`;
+
+        // Tone bars
+        if (d.scores) {
+            html += `<div class="tone-bars">`;
+            for (const [tone, val] of Object.entries(d.scores)) {
+                const color = toneColors[tone] || 'var(--accent)';
+                html += `<div class="tone-bar-item">
+                    <span class="tone-bar-label">${tone}</span>
+                    <div class="tone-bar-track"><div class="tone-bar-fill" style="width:${val*100}%;background:${color}"></div></div>
+                    <span class="tone-bar-val">${(val*100).toFixed(0)}%</span>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+
+        return html;
+    }
+
+    // --- Tone Adjust ---
+    function renderToneAdjust(d) {
+        let html = `<div class="result-text">${escHtml(d.text)}</div>`;
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.targetTone'), d.target, null);
+        html += metricCard(I18n.t('metric.intensity'), d.intensity.toFixed(1), null);
+        html += `</div>`;
+        return html;
+    }
+
+    // --- Coherence ---
+    function renderCoherence(d) {
+        const overallColor = d.overall > 0.7 ? 'good' : d.overall > 0.4 ? 'warn' : 'bad';
+        let html = `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.overall'), pct(d.overall), d.overall);
+        html += metricCard(I18n.t('metric.lexicalCohesion'), pct(d.lexical_cohesion), d.lexical_cohesion);
+        html += metricCard(I18n.t('metric.transitions'), pct(d.transition_score), d.transition_score);
+        html += metricCard(I18n.t('metric.topicConsistency'), pct(d.topic_consistency), d.topic_consistency);
+        html += metricCard(I18n.t('metric.openingDiversity'), pct(d.sentence_opening_diversity), d.sentence_opening_diversity);
+        html += `</div>`;
+
+        if (d.issues && d.issues.length) {
+            html += `<h4 style="margin-top:16px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.issues')}</h4>`;
+            html += `<div class="issues-list">`;
+            d.issues.forEach(issue => {
+                html += `<div class="issue-item">⚠️ ${escHtml(typeof issue === 'string' ? issue : JSON.stringify(issue))}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        if (d.suggestions && d.suggestions.length) {
+            html += `<h4 style="margin-top:16px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.suggestions')}</h4>`;
+            html += `<div class="issues-list">`;
+            d.suggestions.forEach(s => {
+                html += `<div class="issue-item" style="border-left-color:var(--success)">💡 ${escHtml(typeof s === 'string' ? s : JSON.stringify(s))}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        return html;
+    }
+
+    // --- Watermark ---
+    function renderWatermark(d) {
+        if (d.action === 'clean') {
+            let html = `<div class="verdict-badge wm-clean-badge">✅ ${I18n.t('wm.cleaned')}</div>`;
+            html += `<div class="result-text">${escHtml(d.cleaned_text)}</div>`;
+            return html;
+        }
+
+        // Detect
+        const verdictClass = d.has_watermarks ? 'verdict-ai' : 'verdict-human';
+        const verdictText = d.has_watermarks ? I18n.t('wm.found') : I18n.t('wm.notFound');
+        let html = `<div class="verdict-badge ${verdictClass}">${d.has_watermarks ? '🚨' : '✅'} ${verdictText}</div>`;
+
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.confidence'), pct(d.confidence), d.confidence);
+        html += `</div>`;
+
+        if (d.watermark_types && d.watermark_types.length) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">${I18n.t('wm.types')}</h4>`;
+            html += `<div class="wm-types">`;
+            d.watermark_types.forEach(t => {
+                html += `<span class="wm-type-badge">${escHtml(t.replace(/_/g, ' '))}</span>`;
+            });
+            html += `</div>`;
+        }
+
+        if (d.details && d.details.length) {
+            html += `<div class="issues-list" style="margin-top:12px">`;
+            d.details.forEach(det => {
+                html += `<div class="issue-item">🔍 ${escHtml(typeof det === 'string' ? det : JSON.stringify(det))}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        if (d.cleaned_text && d.has_watermarks) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">${I18n.t('wm.cleanedVersion')}</h4>`;
+            html += `<div class="result-text">${escHtml(d.cleaned_text)}</div>`;
+        }
+
+        return html;
+    }
+
+    // --- Spin ---
+    function renderSpin(d) {
+        if (d.mode === 'variants' && d.variants) {
+            let html = `<div class="result-metrics">`;
+            html += metricCard(I18n.t('metric.variants'), d.count);
+            html += `</div>`;
+            html += `<div class="variants-list">`;
+            d.variants.forEach((v, i) => {
+                const text = typeof v === 'string' ? v : (v.spun || v.text || JSON.stringify(v));
+                const uniq = v.uniqueness ? ` · ${pct(v.uniqueness)} unique` : '';
+                html += `<div class="variant-item">
+                    <div class="variant-header"><span>#${i+1}${uniq}</span></div>
+                    <div class="variant-text">${escHtml(text)}</div>
+                </div>`;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        let html = `<div class="result-text">${escHtml(d.spun)}</div>`;
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.uniqueness'), pct(d.uniqueness), d.uniqueness);
+        html += `</div>`;
+        if (d.spintax) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">Spintax</h4>`;
+            html += `<div class="result-text" style="font-family:var(--mono);font-size:0.78rem">${escHtml(d.spintax)}</div>`;
+        }
+        return html;
+    }
+
+    // --- Paraphrase ---
+    function renderParaphrase(d) {
+        let html = `<div class="result-text">${escHtml(d.paraphrased)}</div>`;
+        html += `<div class="result-metrics">`;
+        html += metricCard(I18n.t('metric.confidence'), pct(d.confidence), d.confidence);
+        html += `</div>`;
+
+        if (d.changes && d.changes.length) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.changes')}</h4>`;
+            html += `<div class="changes-list">`;
+            d.changes.forEach(c => {
+                if (typeof c === 'string') {
+                    html += `<div class="change-item">${escHtml(c)}</div>`;
+                } else {
+                    html += `<div class="change-item"><span class="del">${escHtml(c.from || c.original || '')}</span> → <span class="ins">${escHtml(c.to || c.replacement || '')}</span></div>`;
                 }
             });
-        });
+            html += `</div>`;
+        }
+        return html;
+    }
 
-        // Modal events
-        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
-        if (modalCopyBtn) modalCopyBtn.addEventListener('click', copyModalResult);
-        if (modalDiffBtn) modalDiffBtn.addEventListener('click', toggleModalDiff);
-        if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+    // --- Explain ---
+    function renderExplain(d) {
+        let html = '';
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                e.preventDefault();
-                if (!isProcessing && getInputText().trim()) doHumanize();
+        // Try to render structured explanation
+        if (d.original && d.humanized) {
+            html += `<h4 style="font-size:0.85rem;color:var(--text2);margin-bottom:8px">${I18n.t('result.original')}</h4>`;
+            html += `<div class="result-text" style="margin-bottom:14px">${escHtml(d.original)}</div>`;
+            html += `<h4 style="font-size:0.85rem;color:var(--text2);margin-bottom:8px">${I18n.t('result.humanized')}</h4>`;
+            html += `<div class="result-text">${escHtml(d.humanized)}</div>`;
+        }
+
+        if (d.recommendations && d.recommendations.length) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.recommendations')}</h4>`;
+            html += `<div class="issues-list">`;
+            d.recommendations.forEach(r => {
+                html += `<div class="issue-item" style="border-left-color:var(--accent)">💡 ${escHtml(typeof r === 'string' ? r : JSON.stringify(r))}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        if (d.changes && d.changes.length) {
+            html += `<h4 style="margin-top:14px;font-size:0.85rem;color:var(--text2)">${I18n.t('result.changes')}</h4>`;
+            html += `<div class="changes-list">`;
+            d.changes.forEach(c => {
+                if (typeof c === 'string') {
+                    html += `<div class="change-item">${escHtml(c)}</div>`;
+                } else {
+                    html += `<div class="change-item"><span class="del">${escHtml(c.from || c.original || '')}</span> → <span class="ins">${escHtml(c.to || c.replacement || '')}</span></div>`;
+                }
+            });
+            html += `</div>`;
+        }
+
+        // Fallback: render all remaining data
+        if (!html) {
+            html = `<div class="result-summary">${escHtml(JSON.stringify(d, null, 2))}</div>`;
+        }
+
+        return html;
+    }
+
+    // ==================== Helpers ====================
+    function metricCard(label, value, ratio, inverse) {
+        let cls = '';
+        if (ratio !== null && ratio !== undefined) {
+            if (inverse) {
+                cls = ratio > 0.6 ? 'bad' : ratio > 0.3 ? 'warn' : 'good';
+            } else {
+                cls = ratio > 0.7 ? 'good' : ratio > 0.4 ? 'warn' : 'bad';
             }
-            if (e.key === 'Escape') closeModal();
-        });
+        }
+        let bar = '';
+        if (ratio !== null && ratio !== undefined) {
+            bar = `<div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.min(ratio*100,100)}%"></div></div>`;
+        }
+        return `<div class="metric-card">
+            <div class="metric-label">${escHtml(label)}</div>
+            <div class="metric-value ${cls}">${value}</div>
+            ${bar}
+        </div>`;
+    }
 
-        // Nav active state
+    function pct(v) { return (v * 100).toFixed(1) + '%'; }
+    function fmtScore(v) { return v.toFixed(1); }
+    function escHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function toCamel(s) { return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()); }
+
+    function showToast(msg) {
+        els.toast.textContent = msg;
+        els.toast.classList.add('show');
+        setTimeout(() => els.toast.classList.remove('show'), 3000);
+    }
+
+    // ==================== File Upload ====================
+    function initFileUpload() {
+        els.fileUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const resp = await fetch(API + '/api/extract', { method: 'POST', body: fd });
+                const data = await resp.json();
+                if (data.ok && data.text) {
+                    els.inputText.value = data.text;
+                    updateInputStats();
+                    showToast(I18n.t('toast.extracted'));
+                } else {
+                    showToast('Error: ' + (data.error || 'Failed'));
+                }
+            } catch (err) {
+                showToast('Upload error: ' + err.message);
+            }
+            e.target.value = '';
+        });
+    }
+
+    // ==================== URL Extract ====================
+    function initUrlExtract() {
+        els.urlExtract.addEventListener('click', () => {
+            els.urlModal.style.display = '';
+            els.urlInput.focus();
+        });
+        els.urlModalClose.addEventListener('click', () => {
+            els.urlModal.style.display = 'none';
+        });
+        els.urlModal.addEventListener('click', (e) => {
+            if (e.target === els.urlModal) els.urlModal.style.display = 'none';
+        });
+        els.urlGo.addEventListener('click', async () => {
+            const url = els.urlInput.value.trim();
+            if (!url) return;
+            try {
+                const resp = await fetch(API + '/api/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await resp.json();
+                if (data.ok && data.text) {
+                    els.inputText.value = data.text;
+                    updateInputStats();
+                    showToast(I18n.t('toast.extracted'));
+                    els.urlModal.style.display = 'none';
+                } else {
+                    showToast('Error: ' + (data.error || 'Failed'));
+                }
+            } catch (err) {
+                showToast('URL error: ' + err.message);
+            }
+        });
+    }
+
+    // ==================== Copy ====================
+    function initCopy() {
+        els.copyResult.addEventListener('click', () => {
+            const text = els.resultBody.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(I18n.t('toast.copied'));
+            }).catch(() => {
+                showToast('Copy failed');
+            });
+        });
+    }
+
+    // ==================== Language Switcher ====================
+    function initLangSwitcher() {
+        const saved = localStorage.getItem('hk-lang') || 'en';
+        setLang(saved);
+
+        $$('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => setLang(btn.dataset.lang));
+        });
+    }
+
+    function setLang(lang) {
+        if (window.I18n) {
+            I18n.setLocale(lang);
+            I18n.translatePage();
+        }
+        $$('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+        localStorage.setItem('hk-lang', lang);
+    }
+
+    // ==================== Intensity Slider ====================
+    function initIntensity() {
+        els.ctrlIntensity.addEventListener('input', () => {
+            els.intensityVal.textContent = els.ctrlIntensity.value;
+        });
+    }
+
+    // ==================== Smooth Nav ====================
+    function initNav() {
         $$('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
                 $$('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
+                const target = document.querySelector(link.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
             });
         });
     }
 
-    // === Source Switching ===
-    function switchSource(source) {
-        currentSource = source;
-        sourceTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.source === source));
-        const panels = { text: '#sourceText', file: '#sourceFile', url: '#sourceUrl' };
-        Object.entries(panels).forEach(([key, sel]) => {
-            const panel = $(sel);
-            if (panel) panel.classList.toggle('active', key === source);
-        });
-    }
+    // ==================== Init ====================
+    function init() {
+        initTheme();
+        initToolGrid();
+        initFileUpload();
+        initUrlExtract();
+        initCopy();
+        initLangSwitcher();
+        initIntensity();
+        initNav();
 
-    function getInputText() { return inputText.value.trim(); }
+        els.inputText.addEventListener('input', updateInputStats);
+        els.runBtn.addEventListener('click', runTool);
 
-    // === File Upload ===
-    async function handleFileUpload(file) {
-        if (file.size > 1024 * 1024) { showToast('error', t('toast.file.toobig')); return; }
-        const ext = file.name.split('.').pop().toLowerCase();
-        const allowed = ['txt', 'text', 'md', 'markdown', 'html', 'htm', 'csv', 'log'];
-        if (!allowed.includes(ext)) { showToast('error', t('toast.file.type')); return; }
-
-        if (['html', 'htm'].includes(ext)) {
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
-                const response = await fetch('/api/extract', { method: 'POST', body: formData });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.ok && data.text) {
-                        inputText.value = data.text;
-                        switchSource('text');
-                        onInputChange();
-                        showToast('success', t('toast.file.loaded', file.name));
-                        return;
-                    }
-                }
-            } catch(e) { /* fallback */ }
-        }
-
-        try {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                inputText.value = e.target.result;
-                switchSource('text');
-                onInputChange();
-                showToast('success', t('toast.file.loaded', file.name));
-            };
-            reader.onerror = () => showToast('error', t('toast.file.error'));
-            reader.readAsText(file);
-        } catch(e) { showToast('error', t('toast.file.error')); }
-
-        if (fileName) { fileName.textContent = file.name; fileName.style.display = 'block'; }
-    }
-
-    // === URL Fetch ===
-    async function handleUrlFetch() {
-        const url = urlInput ? urlInput.value.trim() : '';
-        if (!url) return;
-        try { new URL(url); } catch { showToast('error', t('toast.url.error')); return; }
-
-        if (fetchUrlBtn) fetchUrlBtn.disabled = true;
-        try {
-            const response = await fetch('/api/extract', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url }),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-            if (data.text) {
-                inputText.value = data.text;
-                switchSource('text');
-                onInputChange();
-                showToast('success', t('toast.url.fetched'));
+        // Keyboard shortcut: Ctrl+Enter to run
+        els.inputText.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runTool();
             }
-        } catch (err) {
-            showToast('error', t('toast.url.error'));
-        } finally {
-            if (fetchUrlBtn) fetchUrlBtn.disabled = false;
-        }
-    }
-
-    // === Input Stats ===
-    function onInputChange() {
-        updateInputStats();
-        const hasText = inputText.value.trim().length > 0;
-        humanizeBtn.disabled = !hasText;
-        analyzeOnlyBtn.disabled = !hasText;
-        detectAiBtn.disabled = !hasText;
-    }
-
-    function updateInputStats() {
-        const text = inputText.value;
-        const chars = text.length;
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        const sentences = text.trim() ? (text.match(/[.!?…]+/g) || []).length || (text.trim() ? 1 : 0) : 0;
-        const paragraphs = text.trim() ? text.split(/\n\s*\n/).filter(p => p.trim()).length : 0;
-        const readTimeSec = Math.ceil(words / 3.5);
-
-        const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent'), pU = t('stats.para'), rU = t('stats.read');
-        statChars.textContent = `${chars} ${cU}`;
-        statWords.textContent = `${words} ${wU}`;
-        statSentences.textContent = `${sentences} ${sU}`;
-        statParas.textContent = `${paragraphs || (text.trim() ? 1 : 0)} ${pU}`;
-        statReadTime.textContent = readTimeSec > 60 ? `~${Math.round(readTimeSec/60)}m ${rU}` : `~${readTimeSec}s ${rU}`;
-        [statChars, statWords, statSentences, statParas].forEach(el => el.classList.toggle('active', chars > 0));
-    }
-
-    // === Modal ===
-    function openModal() {
-        if (modalOverlay) {
-            modalOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal() {
-        if (modalOverlay) {
-            modalOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-    }
-
-    function copyModalResult() {
-        const text = lastResult ? lastResult.text : '';
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(() => showToast('success', t('toast.copied'))).catch(() => showToast('error', t('toast.copy.fail')));
-    }
-
-    function toggleModalDiff() {
-        showDiff = !showDiff;
-        if (modalDiffBtn) modalDiffBtn.classList.toggle('active', showDiff);
-        if (lastResult) {
-            if (showDiff) {
-                renderDiffInModal(inputText.value, lastResult.text);
-            } else {
-                modalResultText.textContent = lastResult.text;
-            }
-        }
-    }
-
-    function populateModal(data) {
-        // Result text
-        modalResultText.textContent = data.text;
-        showDiff = false;
-        if (modalDiffBtn) modalDiffBtn.classList.remove('active');
-
-        // Change badge
-        if (data.change_ratio !== undefined) {
-            const pct = Math.round(data.change_ratio * 100);
-            modalChangeBadge.textContent = pct + '%';
-        }
-
-        // Result stats
-        const text = data.text;
-        const chars = text.length;
-        const words = text.trim().split(/\s+/).length;
-        const sentences = (text.match(/[.!?…]+/g) || []).length || 1;
-        const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent');
-        $('#statCharsResult').textContent = `${chars} ${cU}`;
-        $('#statWordsResult').textContent = `${words} ${wU}`;
-        $('#statSentencesResult').textContent = `${sentences} ${sU}`;
-
-        // Metrics in modal
-        populateModalMetrics(data);
-
-        // Changes in modal
-        if (data.changes && data.changes.length > 0) {
-            modalChanges.style.display = 'block';
-            modalChangesList.innerHTML = '';
-            data.changes.forEach(ch => {
-                const item = document.createElement('div');
-                item.className = 'modal-change-item';
-                item.innerHTML = `<span class="modal-change-stage">${escapeHtml(ch.stage || '')}</span><del>${escapeHtml(ch.old || ch.before || '')}</del> → <ins>${escapeHtml(ch.new || ch.after || '')}</ins>`;
-                modalChangesList.appendChild(item);
-            });
-        } else {
-            modalChanges.style.display = 'none';
-        }
-
-        // Processing info
-        if (data.elapsed_ms && modalProcessingTime) modalProcessingTime.textContent = `⏱ ${data.elapsed_ms}ms`;
-        if (data.detected_lang && modalDetectedLang) modalDetectedLang.textContent = `🌍 ${data.detected_lang}`;
-    }
-
-    function populateModalMetrics(data) {
-        if (!modalMetrics) return;
-        const before = data.metrics_before;
-        const after = data.metrics_after;
-        if (!before || !after) { modalMetrics.innerHTML = ''; return; }
-
-        const items = [
-            { label: t('metrics.artificiality'), before: before.artificiality_score, after: after.artificiality_score, lower: true },
-            { label: t('metrics.sentlen'), before: before.avg_sentence_length, after: after.avg_sentence_length, lower: false },
-            { label: t('metrics.bureau'), before: before.bureaucratic_ratio, after: after.bureaucratic_ratio, lower: true },
-            { label: t('metrics.burst'), before: before.burstiness_score, after: after.burstiness_score, lower: false },
-            { label: t('metrics.connector'), before: before.connector_ratio, after: after.connector_ratio, lower: true },
-            { label: t('metrics.repetition'), before: before.repetition_score, after: after.repetition_score, lower: true },
-        ];
-
-        modalMetrics.innerHTML = items.map(m => {
-            const bv = typeof m.before === 'number' ? (m.before % 1 ? m.before.toFixed(2) : m.before) : '--';
-            const av = typeof m.after === 'number' ? (m.after % 1 ? m.after.toFixed(2) : m.after) : '--';
-            const improved = m.lower ? m.after < m.before : m.after > m.before;
-            const arrow = improved ? '📉' : '📈';
-            return `<div class="modal-metric-card"><div class="modal-metric-label">${escapeHtml(m.label)}</div><div class="modal-metric-values"><span class="modal-metric-before">${bv}</span><span class="modal-metric-arrow">${arrow}</span><span class="modal-metric-after">${av}</span></div></div>`;
-        }).join('');
-    }
-
-    function renderDiffInModal(original, modified) {
-        const origWords = original.split(/(\s+)/);
-        const modWords = modified.split(/(\s+)/);
-        let html = '';
-        let i = 0, j = 0;
-        while (i < origWords.length || j < modWords.length) {
-            if (i < origWords.length && j < modWords.length && origWords[i] === modWords[j]) {
-                html += escapeHtml(origWords[i]); i++; j++;
-            } else if (j < modWords.length && (i >= origWords.length || origWords.indexOf(modWords[j], i) === -1 || j - i > 3)) {
-                if (modWords[j].trim()) html += `<span class="diff-ins">${escapeHtml(modWords[j])}</span>`;
-                else html += escapeHtml(modWords[j]);
-                j++;
-            } else if (i < origWords.length) {
-                if (origWords[i].trim()) html += `<span class="diff-del">${escapeHtml(origWords[i])}</span>`;
-                else html += escapeHtml(origWords[i]);
-                i++;
-            }
-        }
-        modalResultText.innerHTML = html;
-    }
-
-    // === API Calls ===
-    async function doHumanize() {
-        const text = inputText.value.trim();
-        if (!text || isProcessing) return;
-
-        setProcessing(true);
-        try {
-            const response = await fetch('/api/humanize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: text,
-                    lang: langSelect.value,
-                    profile: 'web',
-                    intensity: 60,
-                }),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-
-            lastResult = data;
-
-            // Populate and open modal
-            populateModal(data);
-            openModal();
-
-            // Also update dashboard behind modal
-            displayMetrics(data);
-
-            // Run analysis for check type
-            doAnalyzeWithCheckType(data.text);
-
-            launchConfetti();
-            showToast('success', t('toast.humanized', data.changes?.length || 0));
-        } catch (err) {
-            showToast('error', t('toast.error', err.message));
-            console.error(err);
-        } finally {
-            setProcessing(false);
-        }
-    }
-
-    async function doAnalyzeOnly() {
-        const text = inputText.value.trim();
-        if (!text || isProcessing) return;
-
-        setProcessing(true);
-        try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, lang: langSelect.value }),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-            displayByCheckType(data);
-            showToast('info', t('toast.analysis'));
-        } catch (err) {
-            showToast('error', t('toast.error', err.message));
-        } finally {
-            setProcessing(false);
-        }
-    }
-
-    async function doDetectAi() {
-        const text = inputText.value.trim();
-        if (!text || isProcessing) return;
-
-        setProcessing(true);
-        try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, lang: langSelect.value }),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-            displayAiDetection(data.ai_detection);
-            showToast('info', t('toast.ai.score', data.ai_detection.score));
-        } catch (err) {
-            showToast('error', t('toast.error', err.message));
-        } finally {
-            setProcessing(false);
-        }
-    }
-
-    async function doAnalyzeWithCheckType(text) {
-        try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, lang: langSelect.value }),
-            });
-            if (!response.ok) return;
-            const data = await response.json();
-            displayByCheckType(data);
-        } catch (e) { /* silent */ }
-    }
-
-    // === Check Type Display ===
-    function displayByCheckType(data) {
-        aiDetectionPanel.style.display = 'none';
-        if (readabilityPanel) readabilityPanel.style.display = 'none';
-        if (stylePanel) stylePanel.style.display = 'none';
-
-        switch (currentCheckType) {
-            case 'comprehensive':
-                displayAnalysis(data);
-                if (data.ai_detection) displayAiDetection(data.ai_detection);
-                if (data.stats) displayReadability(data);
-                displayStyleQuality(data);
-                break;
-            case 'ai':
-                if (data.ai_detection) displayAiDetection(data.ai_detection);
-                break;
-            case 'readability':
-                if (data.stats) displayReadability(data);
-                displayAnalysis(data);
-                break;
-            case 'style':
-                displayStyleQuality(data);
-                displayAnalysis(data);
-                break;
-        }
-    }
-
-    // === Display Readability ===
-    function displayReadability(data) {
-        if (!readabilityPanel || !data.stats) return;
-        readabilityPanel.style.display = 'block';
-        const s = data.stats;
-        const avgSL = data.avg_sentence_length || 0;
-        let grade = avgSL < 10 ? 'Easy' : avgSL < 15 ? 'Medium' : avgSL < 20 ? 'Advanced' : 'Complex';
-
-        const readGrade = $('#readGrade');
-        const readAvgWord = $('#readAvgWord');
-        const readAvgSent = $('#readAvgSent');
-        const readUnique = $('#readUnique');
-        const readTime = $('#readTime');
-
-        if (readGrade) readGrade.textContent = grade;
-        if (readAvgWord) readAvgWord.textContent = s.avg_word_length || '--';
-        if (readAvgSent) readAvgSent.textContent = (data.avg_sentence_length || 0).toFixed(1);
-        if (readUnique) readUnique.textContent = s.unique_ratio ? (s.unique_ratio * 100).toFixed(0) + '%' : '--';
-        if (readTime) {
-            const sec = s.reading_time_sec || 0;
-            readTime.textContent = sec > 60 ? `${Math.round(sec/60)}m` : `${sec}s`;
-        }
-    }
-
-    // === Display Style Quality ===
-    function displayStyleQuality(data) {
-        if (!stylePanel) return;
-        stylePanel.style.display = 'block';
-        const styleBars = $('#styleBars');
-        if (!styleBars) return;
-        styleBars.innerHTML = '';
-
-        const metrics = [
-            { label: t('style.diversity'), value: data.stats ? data.stats.unique_ratio || 0 : 0, max: 1 },
-            { label: t('style.burstiness'), value: data.burstiness_score || 0, max: 2 },
-            { label: t('style.formality'), value: data.bureaucratic_ratio || 0, max: 0.5, inverse: true },
-            { label: t('style.connectors'), value: data.connector_ratio || 0, max: 0.5 },
-        ];
-
-        metrics.forEach(m => {
-            const pct = Math.min((m.value / m.max) * 100, 100);
-            const displayPct = m.inverse ? (100 - pct) : pct;
-            const qualityClass = displayPct >= 70 ? 'excellent' : displayPct >= 50 ? 'good' : displayPct >= 30 ? 'average' : 'poor';
-            const row = document.createElement('div');
-            row.className = 'style-bar-row';
-            row.innerHTML = `<span class="style-bar-label">${escapeHtml(m.label)}</span><div class="style-bar-track"><div class="style-bar-fill ${qualityClass}" style="width: 0%"></div></div><span class="style-bar-value">${displayPct.toFixed(0)}%</span>`;
-            styleBars.appendChild(row);
-            setTimeout(() => { row.querySelector('.style-bar-fill').style.width = `${displayPct}%`; }, 150);
         });
     }
 
-    async function fetchServiceInfo() {
-        try {
-            const response = await fetch('/api/info');
-            if (!response.ok) return;
-            const data = await response.json();
-            const badge = $('#versionBadge');
-            if (badge && data.version) badge.textContent = 'v' + data.version;
-        } catch (e) { /* silent */ }
-    }
-
-    // === Display Analysis ===
-    function displayAnalysis(data) {
-        metricsDashboard.style.display = 'block';
-
-        if (data.artificiality_score !== undefined) {
-            updateMetricPair('artificialityBefore', 'artificialityAfter', data.artificiality_score, data.artificiality_score, 100);
-            updateMetricPair('sentLenBefore', 'sentLenAfter', data.avg_sentence_length, data.avg_sentence_length, 40, 'sentLenBarBefore', 'sentLenBarAfter');
-            updateMetricPair('bureaRatioBefore', 'bureaRatioAfter', data.bureaucratic_ratio, data.bureaucratic_ratio, 1, 'bureaBarBefore', 'bureaBarAfter');
-            updateMetricPair('burstBefore', 'burstAfter', data.burstiness_score, data.burstiness_score, 2, 'burstBarBefore', 'burstBarAfter');
-            updateMetricPair('connRatioBefore', 'connRatioAfter', data.connector_ratio, data.connector_ratio, 0.3, 'connBarBefore', 'connBarAfter');
-            updateMetricPair('repScoreBefore', 'repScoreAfter', data.repetition_score, data.repetition_score, 1, 'repBarBefore', 'repBarAfter');
-            animateGauge('artificialityGauge', data.artificiality_score / 100);
-        }
-
-        if (data.ai_detection && currentCheckType === 'comprehensive') {
-            displayAiDetection(data.ai_detection);
-        }
-
-        if (data.stats) {
-            const s = data.stats;
-            const cU = t('stats.chars'), wU = t('stats.words'), sU = t('stats.sent'), pU = t('stats.para'), rU = t('stats.read');
-            statChars.textContent = `${s.chars || s.characters} ${cU}`;
-            statWords.textContent = `${s.words} ${wU}`;
-            statSentences.textContent = `${s.sentences} ${sU}`;
-            statParas.textContent = `${s.paragraphs} ${pU}`;
-            statReadTime.textContent = s.reading_time_sec > 60 ? `~${Math.round(s.reading_time_sec/60)}m ${rU}` : `~${s.reading_time_sec}s ${rU}`;
-        }
-
-        if (data.elapsed_ms) {
-            const el = $('#processingTime');
-            if (el) el.textContent = `⏱ ${data.elapsed_ms}ms`;
-        }
-    }
-
-    // === Display Metrics from Humanize ===
-    function displayMetrics(data) {
-        const before = data.metrics_before;
-        const after = data.metrics_after;
-        if (!before || !after) return;
-
-        metricsDashboard.style.display = 'block';
-
-        animateValuePair('artificialityBefore', 'artificialityAfter', before.artificiality_score, after.artificiality_score);
-        animateGauge('artificialityGauge', after.artificiality_score / 100);
-        const dir = after.artificiality_score < before.artificiality_score ? '📉' : after.artificiality_score > before.artificiality_score ? '📈' : '➡️';
-        const dirEl = $('#artificialityDir');
-        if (dirEl) dirEl.textContent = dir;
-
-        setupMetricBar('sentLen', before.avg_sentence_length, after.avg_sentence_length, 40);
-        setupMetricBar('bureaRatio', before.bureaucratic_ratio, after.bureaucratic_ratio, 1);
-        setupMetricBar('burst', before.burstiness_score, after.burstiness_score, 2);
-        setupMetricBar('connRatio', before.connector_ratio, after.connector_ratio, 0.3);
-        setupMetricBar('repScore', before.repetition_score, after.repetition_score, 1);
-
-        if (data.changes && data.changes.length > 0) {
-            changesSection.style.display = 'block';
-            changesList.innerHTML = '';
-            data.changes.forEach(ch => {
-                const item = document.createElement('div');
-                item.className = 'change-item';
-                item.innerHTML = `<span class="change-stage">${escapeHtml(ch.stage || '')}</span><del>${escapeHtml(ch.old || ch.before || '')}</del> → <ins>${escapeHtml(ch.new || ch.after || '')}</ins>`;
-                changesList.appendChild(item);
-            });
-        }
-
-        const pTime = $('#processingTime');
-        const dLang = $('#detectedLang');
-        if (data.elapsed_ms && pTime) pTime.textContent = `⏱ ${data.elapsed_ms}ms`;
-        if (data.detected_lang && dLang) dLang.textContent = `🌍 ${data.detected_lang}`;
-    }
-
-    function setupMetricBar(prefix, before, after, max) {
-        const bEl = $(`#${prefix}Before`), aEl = $(`#${prefix}After`);
-        const bBar = $(`#${prefix}BarBefore`), aBar = $(`#${prefix}BarAfter`);
-        if (bEl) animateNumber(bEl, before, isFloat(before));
-        if (aEl) animateNumber(aEl, after, isFloat(after));
-        if (bBar) setTimeout(() => { bBar.style.width = `${Math.min(before / max * 100, 100)}%`; }, 100);
-        if (aBar) setTimeout(() => { aBar.style.width = `${Math.min(after / max * 100, 100)}%`; }, 200);
-    }
-
-    function updateMetricPair(beforeId, afterId, bVal, aVal, max, barBeforeId, barAfterId) {
-        const bEl = $(`#${beforeId}`), aEl = $(`#${afterId}`);
-        if (bEl) animateNumber(bEl, bVal, isFloat(bVal));
-        if (aEl) animateNumber(aEl, aVal, isFloat(aVal));
-        if (barBeforeId) { const bb = $(`#${barBeforeId}`); if (bb) setTimeout(() => { bb.style.width = `${Math.min(bVal / max * 100, 100)}%`; }, 100); }
-        if (barAfterId) { const ab = $(`#${barAfterId}`); if (ab) setTimeout(() => { ab.style.width = `${Math.min(aVal / max * 100, 100)}%`; }, 200); }
-    }
-
-    function animateValuePair(beforeId, afterId, bVal, aVal) {
-        const bEl = $(`#${beforeId}`), aEl = $(`#${afterId}`);
-        if (bEl) animateNumber(bEl, bVal, isFloat(bVal));
-        if (aEl) animateNumber(aEl, aVal, isFloat(aVal));
-    }
-
-    function isFloat(v) { return v !== Math.floor(v); }
-
-    // === AI Detection Display (with factor translation) ===
-    function displayAiDetection(ai) {
-        if (!ai) return;
-        aiDetectionPanel.style.display = 'block';
-
-        const score = ai.score || 0;
-        const ring = $('#aiRingFill');
-        const circumference = 2 * Math.PI * 52;
-        const offset = circumference - (score / 100) * circumference;
-
-        ensureAiGradient();
-
-        setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
-        animateNumber($('#aiScoreNumber'), score, false);
-
-        const verdict = $('#aiVerdict');
-        verdict.textContent = ai.label || getAiLabel(score);
-        verdict.className = 'ai-verdict';
-        if (score < 30) verdict.classList.add('human');
-        else if (score < 65) verdict.classList.add('mixed');
-        else verdict.classList.add('ai');
-
-        const factorsEl = $('#aiFactors');
-        factorsEl.innerHTML = '';
-
-        const factors = ai.factors || [];
-        factors.forEach(f => {
-            const row = document.createElement('div');
-            row.className = 'ai-factor-row';
-            const level = f.value < 0.35 ? 'low' : f.value < 0.65 ? 'medium' : 'high';
-
-            // Translate factor name
-            const i18nKey = FACTOR_KEYS[f.name];
-            const translatedName = i18nKey ? t(i18nKey) : f.name;
-
-            row.innerHTML = `
-                <span class="ai-factor-name">${escapeHtml(translatedName)}</span>
-                <div class="ai-factor-bar"><div class="ai-factor-fill ${level}" style="width: 0%"></div></div>
-                <span class="ai-factor-value">${Math.round(f.value * 100)}%</span>
-            `;
-            factorsEl.appendChild(row);
-            setTimeout(() => { row.querySelector('.ai-factor-fill').style.width = `${Math.round(f.value * 100)}%`; }, 200);
-        });
-    }
-
-    function ensureAiGradient() {
-        if (document.getElementById('aiGaugeGrad')) return;
-        const svg = document.querySelector('.ai-ring');
-        if (!svg) return;
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-        grad.setAttribute('id', 'aiGaugeGrad');
-        grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%');
-        grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '0%');
-        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#10b981');
-        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop2.setAttribute('offset', '50%'); stop2.setAttribute('stop-color', '#f59e0b');
-        const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop3.setAttribute('offset', '100%'); stop3.setAttribute('stop-color', '#ef4444');
-        grad.appendChild(stop1); grad.appendChild(stop2); grad.appendChild(stop3);
-        defs.appendChild(grad);
-        svg.insertBefore(defs, svg.firstChild);
-    }
-
-    function getAiLabel(score) {
-        if (score < 15) return t('ai.human.written');
-        if (score < 30) return t('ai.likely.human');
-        if (score < 50) return t('ai.mixed');
-        if (score < 65) return t('ai.possibly.ai');
-        if (score < 80) return t('ai.likely.ai');
-        return t('ai.generated');
-    }
-
-    // === Animations ===
-    function animateNumber(el, target, isDecimal) {
-        if (!el) return;
-        const start = parseFloat(el.textContent) || 0;
-        const diff = target - start;
-        const duration = 800;
-        const startTime = performance.now();
-        function update(now) {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            const current = start + diff * eased;
-            el.textContent = isDecimal ? current.toFixed(2) : Math.round(current);
-            if (progress < 1) requestAnimationFrame(update);
-        }
-        requestAnimationFrame(update);
-    }
-
-    function animateGauge(id, fraction) {
-        const el = $(`#${id}`);
-        if (!el) return;
-        const maxDash = 157;
-        const offset = maxDash - (fraction * maxDash);
-        setTimeout(() => { el.style.strokeDashoffset = Math.max(offset, 0); }, 200);
-    }
-
-    function setupAnimatedCounters() {
-        const counters = $$('.stat-number[data-count]');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const el = entry.target;
-                    animateNumber(el, parseInt(el.dataset.count), false);
-                    observer.unobserve(el);
-                }
-            });
-        }, { threshold: 0.5 });
-        counters.forEach(el => observer.observe(el));
-    }
-
-    // === Effects ===
-    function launchConfetti() {
-        const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
-        for (let i = 0; i < 40; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'confetti-piece';
-            piece.style.left = Math.random() * 100 + 'vw';
-            piece.style.top = '-10px';
-            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.width = Math.random() * 8 + 4 + 'px';
-            piece.style.height = Math.random() * 8 + 4 + 'px';
-            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-            piece.style.animationDelay = Math.random() * 0.5 + 's';
-            piece.style.animationDuration = Math.random() * 1.5 + 2 + 's';
-            document.body.appendChild(piece);
-            setTimeout(() => piece.remove(), 4000);
-        }
-    }
-
-    // === Toast ===
-    function showToast(type, message) {
-        const container = $('#toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-        toast.innerHTML = `<span class="toast-icon">${icons[type] || ''}</span><span>${escapeHtml(message)}</span>`;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'toastOut 0.3s ease-in forwards';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
-    }
-
-    // === Utility ===
-    function setProcessing(state) {
-        isProcessing = state;
-        humanizeBtn.classList.toggle('loading', state);
-        humanizeBtn.disabled = state;
-        analyzeOnlyBtn.disabled = state;
-        detectAiBtn.disabled = state;
-    }
-
-    function clearAll() {
-        inputText.value = '';
-        lastResult = null;
-        showDiff = false;
-        metricsDashboard.style.display = 'none';
-        aiDetectionPanel.style.display = 'none';
-        if (readabilityPanel) readabilityPanel.style.display = 'none';
-        if (stylePanel) stylePanel.style.display = 'none';
-        if (changesSection) changesSection.style.display = 'none';
-        humanizeBtn.disabled = true;
-        analyzeOnlyBtn.disabled = true;
-        detectAiBtn.disabled = true;
-        if (urlInput) urlInput.value = '';
-        if (fileName) fileName.style.display = 'none';
-        if (fileInput) fileInput.value = '';
-        closeModal();
-        updateInputStats();
-        showToast('info', t('toast.cleared'));
-    }
-
-    async function pasteClipboard() {
-        try {
-            const text = await navigator.clipboard.readText();
-            inputText.value = text;
-            onInputChange();
-            showToast('success', t('toast.pasted'));
-        } catch (e) {
-            showToast('error', t('toast.paste.fail'));
-        }
-    }
-
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    // === Start ===
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

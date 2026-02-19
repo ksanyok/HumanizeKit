@@ -23,42 +23,61 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    $maxSize = 1024 * 1024; // 1MB
+    $maxSize = 10 * 1024 * 1024; // 10MB
 
     // Check if it's a file upload (multipart/form-data)
     if (!empty($_FILES['file'])) {
         $file = $_FILES['file'];
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException('File upload error: ' . $file['error']);
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit',
+                UPLOAD_ERR_FORM_SIZE  => 'File exceeds form limit',
+                UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE    => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temp folder on server',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file on server',
+            ];
+            throw new \RuntimeException($uploadErrors[$file['error']] ?? 'Upload error code: ' . $file['error']);
         }
 
         if ($file['size'] > $maxSize) {
-            throw new \RuntimeException('File too large (max 1MB)');
+            throw new \RuntimeException('File too large (max 10MB)');
         }
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowed = ['txt', 'text', 'md', 'markdown', 'html', 'htm', 'csv', 'log', 'rtf'];
+        $allowed = ['txt', 'text', 'md', 'markdown', 'html', 'htm', 'csv', 'log', 'rtf', 'pdf', 'docx', 'odt'];
 
         if (!in_array($ext, $allowed)) {
             throw new \RuntimeException('Unsupported file type: ' . $ext . '. Allowed: ' . implode(', ', $allowed));
         }
 
-        $content = file_get_contents($file['tmp_name']);
-
-        if ($content === false) {
-            throw new \RuntimeException('Cannot read uploaded file');
-        }
-
-        // Detect encoding and convert to UTF-8
-        $encoding = mb_detect_encoding($content, ['UTF-8', 'Windows-1251', 'ISO-8859-1', 'KOI8-R', 'CP1252'], true);
-        if ($encoding && $encoding !== 'UTF-8') {
-            $content = mb_convert_encoding($content, 'UTF-8', $encoding);
-        }
-
-        // Strip HTML tags if HTML file
-        if (in_array($ext, ['html', 'htm'])) {
-            $content = extractTextFromHtml($content);
+        // Extract text based on file type
+        switch ($ext) {
+            case 'pdf':
+                $content = extractTextFromPdf($file['tmp_name']);
+                break;
+            case 'docx':
+                $content = extractTextFromDocx($file['tmp_name']);
+                break;
+            case 'odt':
+                $content = extractTextFromOdt($file['tmp_name']);
+                break;
+            default:
+                $content = file_get_contents($file['tmp_name']);
+                if ($content === false) {
+                    throw new \RuntimeException('Cannot read uploaded file');
+                }
+                // Detect encoding and convert to UTF-8
+                $encoding = mb_detect_encoding($content, ['UTF-8', 'Windows-1251', 'ISO-8859-1', 'KOI8-R', 'CP1252'], true);
+                if ($encoding && $encoding !== 'UTF-8') {
+                    $content = mb_convert_encoding($content, 'UTF-8', $encoding);
+                }
+                // Strip HTML tags if HTML file
+                if (in_array($ext, ['html', 'htm'])) {
+                    $content = extractTextFromHtml($content);
+                }
+                break;
         }
 
         // Clean up
@@ -141,6 +160,121 @@ try {
         'ok' => false,
         'error' => $e->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * Extract text from PDF using pdftotext command
+ */
+function extractTextFromPdf(string $filePath): string
+{
+    // Check if pdftotext is available
+    $pdftotext = '/usr/bin/pdftotext';
+    if (!file_exists($pdftotext)) {
+        $pdftotext = trim(shell_exec('which pdftotext 2>/dev/null') ?? '');
+    }
+    if (!$pdftotext) {
+        throw new \RuntimeException('PDF extraction is not available on this server (pdftotext not found)');
+    }
+
+    $tmpOut = tempnam(sys_get_temp_dir(), 'hk_pdf_') . '.txt';
+    $cmd = escapeshellcmd($pdftotext) . ' -layout ' . escapeshellarg($filePath) . ' ' . escapeshellarg($tmpOut) . ' 2>&1';
+    exec($cmd, $output, $exitCode);
+
+    if ($exitCode !== 0 || !file_exists($tmpOut)) {
+        @unlink($tmpOut);
+        throw new \RuntimeException('PDF extraction failed: ' . implode(' ', $output));
+    }
+
+    $text = file_get_contents($tmpOut);
+    @unlink($tmpOut);
+
+    if ($text === false || trim($text) === '') {
+        throw new \RuntimeException('No text could be extracted from PDF (file may be image-based or empty)');
+    }
+
+    return $text;
+}
+
+/**
+ * Extract text from DOCX (Office Open XML) using ZipArchive
+ */
+function extractTextFromDocx(string $filePath): string
+{
+    if (!class_exists('ZipArchive')) {
+        throw new \RuntimeException('DOCX extraction not available (zip extension missing)');
+    }
+
+    $zip = new \ZipArchive();
+    if ($zip->open($filePath) !== true) {
+        throw new \RuntimeException('Cannot open DOCX file (invalid or corrupted)');
+    }
+
+    $content = $zip->getFromName('word/document.xml');
+    $zip->close();
+
+    if ($content === false) {
+        throw new \RuntimeException('Cannot read document.xml from DOCX (file may be corrupted)');
+    }
+
+    // Parse XML and extract text
+    $xml = @simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOERROR | LIBXML_NOWARNING);
+    if ($xml === false) {
+        // Fallback: strip XML tags
+        $text = strip_tags($content);
+        return trim($text);
+    }
+
+    $xml->registerXPathNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+    $paragraphs = [];
+    foreach ($xml->xpath('//w:p') as $p) {
+        $texts = [];
+        foreach ($p->xpath('.//w:t') as $t) {
+            $texts[] = (string) $t;
+        }
+        $line = implode('', $texts);
+        if ($line !== '') {
+            $paragraphs[] = $line;
+        }
+    }
+
+    if (empty($paragraphs)) {
+        throw new \RuntimeException('No text found in DOCX file');
+    }
+
+    return implode("\n\n", $paragraphs);
+}
+
+/**
+ * Extract text from ODT (OpenDocument Text) using ZipArchive
+ */
+function extractTextFromOdt(string $filePath): string
+{
+    if (!class_exists('ZipArchive')) {
+        throw new \RuntimeException('ODT extraction not available (zip extension missing)');
+    }
+
+    $zip = new \ZipArchive();
+    if ($zip->open($filePath) !== true) {
+        throw new \RuntimeException('Cannot open ODT file (invalid or corrupted)');
+    }
+
+    $content = $zip->getFromName('content.xml');
+    $zip->close();
+
+    if ($content === false) {
+        throw new \RuntimeException('Cannot read content.xml from ODT');
+    }
+
+    // Strip XML tags and extract text
+    $text = strip_tags($content);
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    if (trim($text) === '') {
+        throw new \RuntimeException('No text found in ODT file');
+    }
+
+    return $text;
 }
 
 /**

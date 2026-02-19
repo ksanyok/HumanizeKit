@@ -36,7 +36,11 @@ try {
     $text = (string) $input['text'];
     $lang = $input['lang'] ?? null;
     $profile = $input['profile'] ?? 'web';
-    $intensity = (int) ($input['intensity'] ?? 60);
+    // Frontend sends 0.0-1.0, library expects 0-100
+    $rawIntensity = $input['intensity'] ?? 0.6;
+    $intensity = (int) (is_numeric($rawIntensity) && (float)$rawIntensity <= 1.0
+        ? round((float)$rawIntensity * 100)
+        : (int)$rawIntensity);
     $seed = isset($input['seed']) ? (int) $input['seed'] : null;
 
     if ($lang === 'auto') {
